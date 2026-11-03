@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
@@ -156,11 +157,14 @@ def local_validate(result: RenderResult) -> List[str]:
                 except Exception as exc:
                     errors.append("%s YAML 无效: %s" % (path, exc))
         elif path.endswith(".sh"):
+            bash = shutil.which("bash")
+            if not bash:
+                continue  # Windows 没有 bash 时跳过 shell 语法检查
             fd, tmp = tempfile.mkstemp(suffix=".sh")
             try:
                 with os.fdopen(fd, "wb") as f:
                     f.write(data)
-                proc = subprocess.run(["bash", "-n", tmp], capture_output=True, text=True)
+                proc = subprocess.run([bash, "-n", tmp], capture_output=True, text=True)
                 if proc.returncode != 0:
                     errors.append("%s shell 语法错误: %s" % (path, (proc.stderr or "").strip()))
             finally:

@@ -111,7 +111,8 @@ class RenderTest(unittest.TestCase):
         r = render(self.node, self.secrets, self.root, self.opts)
         write_build(r, self.paths.build_dir)
         import os
-        self.assertEqual(os.stat(self.paths.build_dir / "client-import.md").st_mode & 0o777, 0o600)
+        if os.name != "nt":
+            self.assertEqual(os.stat(self.paths.build_dir / "client-import.md").st_mode & 0o777, 0o600)
         self.assertTrue((self.paths.build_dir / "manifest.json").exists())
         manifest = json.loads((self.paths.build_dir / "manifest.json").read_text())
         self.assertTrue(any(m["path"] == "/etc/nftables.conf" for m in manifest))

@@ -39,3 +39,21 @@ jobs:
           for f in vpskitlib/assets/opt/ops/ops vpskitlib/assets/opt/ops/xray_selfheal.sh vpskitlib/assets/opt/traffic/traffic-snapshot.sh; do bash -n "$f"; done
       - name: Secret scan (working tree)
         run: ./scripts/check-secrets.sh
+
+  windows-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip setuptools wheel pyyaml
+          python -m pip install --no-deps -e .
+      - name: Console entry point
+        run: vpskit --version
+      - name: Cross-platform imports
+        run: python -c "import vpskitlib.apply, vpskitlib.plan, vpskitlib.verify, vpskitlib.locking"
+      - name: Unit tests (cross-platform subset)
+        run: python -m unittest tests.test_crypto tests.test_config tests.test_render tests.test_secrets tests.test_plan_fake tests.test_redact tests.test_panel tests.test_server tests.test_cli -v

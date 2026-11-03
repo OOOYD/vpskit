@@ -41,6 +41,8 @@ python3 -m pip install --user .
 - Python 3.9+，PyYAML
 - `ssh` / `scp` / `tar`
 - 目标机：Debian 11/12/13 或 Ubuntu 22.04/24.04，root SSH（密钥登录）
+- **Windows 作为本地控制端**：Python 3.9+、Windows OpenSSH 客户端、Git；用 `vpskit` 或
+  `python -m vpskitlib`。目标 VPS 仍是 Linux。原生 Windows 尚未在真机验证；WSL2 可直接按 Linux 文档。
 
 ```bash
 ./vpskit doctor          # clone 方式

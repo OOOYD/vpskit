@@ -1,12 +1,12 @@
 """apply：把 plan 真正落到远端。默认要求确认；防火墙带保险丝。"""
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import shlex
 import socket
 import subprocess
+import tarfile
 import sys
 import time
 from pathlib import Path
@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .config import NodeConfig
+from .locking import FileLock
 from .paths import NodePaths
 from .plan import Plan, build_plan, print_plan
 from .remote import REMOTE_ROOT, Remote, RemoteError
@@ -29,27 +30,6 @@ def _tcp(host: str, port: int, timeout: float = 8.0) -> bool:
         return False
 
 
-class _Lock:
-    def __init__(self, path: Path):
-        self.path = path
-        self.fh = None
-
-    def __enter__(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.fh = open(self.path, "w")
-        try:
-            fcntl.flock(self.fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise VpskitError("另一个 vpskit 进程正在操作该节点（锁: %s）" % self.path) from exc
-        return self
-
-    def __exit__(self, *exc):
-        try:
-            if self.fh:
-                fcntl.flock(self.fh, fcntl.LOCK_UN)
-                self.fh.close()
-        except OSError:
-            pass
 
 
 def _confirm(node: NodeConfig, yes: bool) -> None:
@@ -103,14 +83,15 @@ def _apt_packages(node: NodeConfig) -> List[str]:
 
 
 def _local_tar(prepared) -> Path:
+    """用 tarfile 而不是外部 tar，Windows 本地也能跑。"""
     tar_path = prepared.build_dir / "payload.tar.gz"
     if tar_path.exists():
         tar_path.unlink()
-    subprocess.run(
-        ["tar", "-czf", str(tar_path), "-C", str(prepared.payload_dir), "."],
-        check=True,
-        capture_output=True,
-    )
+    payload = prepared.payload_dir
+    with tarfile.open(tar_path, "w:gz") as tf:
+        for path in sorted(payload.rglob("*")):
+            if path.is_file():
+                tf.add(path, arcname=str(path.relative_to(payload)))
     return tar_path
 
 
@@ -239,7 +220,7 @@ def apply_node(
     prune: bool = False,
 ) -> Dict[str, Any]:
     paths = NodePaths(root, node.id).ensure()
-    with _Lock(paths.lock):
+    with FileLock(paths.lock):
         remote = Remote(node)
         if not remote.check():
             raise VpskitError("SSH 连不上 %s（检查 ssh alias / host / key）" % node.id)

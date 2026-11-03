@@ -27,7 +27,8 @@ class SecretsTest(unittest.TestCase):
         a = S.ensure_secrets(self.node, self.paths.secrets)
         b = S.ensure_secrets(self.node, self.paths.secrets)
         self.assertEqual(a, b)
-        self.assertEqual(os.stat(self.paths.secrets).st_mode & 0o777, 0o600)
+        if os.name != "nt":
+            self.assertEqual(os.stat(self.paths.secrets).st_mode & 0o777, 0o600)
         self.assertEqual(S.client_uuid(a, "main"), S.client_uuid(b, "main"))
         self.assertNotEqual(S.client_sub_path(a, "main"), S.client_sub_path(a, "friend"))
 

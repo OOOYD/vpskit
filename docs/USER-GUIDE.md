@@ -25,6 +25,8 @@
 - `ssh`、`scp`、`tar`
 - 目标 VPS：Debian 11/12/13 或 Ubuntu 22.04/24.04
 - 能 root 登录目标机（推荐密钥）
+- Windows 作为本地控制端：Python 3.9+、Windows OpenSSH 客户端、Git；用 `vpskit` 或
+  `python -m vpskitlib`。目标 VPS 仍是 Linux；原生 Windows 尚未真机验证，WSL2 按 Linux 文档。
 
 ```bash
 # clone
