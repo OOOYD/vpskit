@@ -263,7 +263,6 @@ nodes:
 ## 13. 给 AI/朋友
 
 - AI 使用：`AGENTS.md`、`docs/AI.md`、`llms.txt`
-- 发布/分享：`docs/PUBLISH.md`
 - 配置字段：`docs/CONFIG.md`
 - 架构：`docs/ARCHITECTURE.md`
 - 安全：`docs/SECURITY.md`

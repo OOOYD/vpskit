@@ -13,7 +13,7 @@
 - 防火墙保险丝：未确认自动恢复；恢复使用 `flush + load`，失败保留 guard
 - 订阅：每用户路径、共享路径、`sub_existing_file` 沿用现网 YAML
 - 只读面板：token、分享脱敏、无操作按钮
-- 文档：README、CONFIG/ARCHITECTURE/SECURITY/OPERATIONS/MIGRATION/PUBLISH/AI
+- 文档：README、CONFIG/ARCHITECTURE/SECURITY/OPERATIONS/MIGRATION/AI
 - 44 个单元测试、CI、secret 扫描脚本
 
 ### Fixed
