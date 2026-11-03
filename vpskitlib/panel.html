@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>__TITLE__</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --card:#fff; --card2:#e8e8ed; --text:#1d1d1f; --sub:#86868b;
+    --line:#e8e8ed; --blue:#007aff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a;
+    --shadow:0 1px 3px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--text:#f5f5f7;--sub:#98989d;--line:#38383a;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Helvetica Neue",sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;
+    padding:24px 16px 48px;display:flex;justify-content:center;
+  }
+  .wrap{width:100%;max-width:1080px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.6px}
+  .sub{color:var(--sub);font-size:12px;margin-top:4px}
+  .pill{font-size:11px;font-weight:600;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid transparent}
+  .card.offline{opacity:.72}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+  .name{font-size:16px;font-weight:700;letter-spacing:-.2px}
+  .host{font-size:11px;color:var(--sub);margin-top:2px;word-break:break-all}
+  .badge{font-size:10px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .badge.ok{background:rgba(48,209,88,.12);color:var(--green)}
+  .badge.bad{background:rgba(255,69,58,.12);color:var(--red)}
+  .big{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .num{font-size:28px;font-weight:700;letter-spacing:-1px}
+  .num small{font-size:13px;font-weight:500;color:var(--sub)}
+  .cap{font-size:11px;color:var(--sub);text-align:right;line-height:1.5}
+  .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;margin:10px 0 6px}
+  .fill{height:100%;border-radius:6px;background:var(--blue);transition:width .5s ease}
+  .meta{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:12px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 12px}
+  .stat{background:var(--bg);border-radius:12px;padding:9px 6px;text-align:center}
+  .stat b{display:block;font-size:13px;font-weight:700}
+  .stat span{font-size:9px;color:var(--sub)}
+  .bars{display:flex;align-items:flex-end;gap:5px;height:54px;margin:6px 0 10px}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
+  .col .b{width:70%;max-width:22px;background:var(--card2);border-radius:5px 5px 2px 2px;min-height:2px}
+  .col.today .b{background:linear-gradient(180deg,#64d2ff,var(--blue))}
+  .col .d{font-size:8px;color:var(--sub);white-space:nowrap}
+  .svc{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
+  .chip{font-size:10px;padding:4px 7px;border-radius:8px;background:var(--bg);color:var(--sub)}
+  .chip.ok{color:var(--green)}
+  .chip.bad{color:var(--red);font-weight:700}
+  .alert{font-size:11px;padding:7px 10px;border-radius:10px;margin-top:6px}
+  .alert.ok{background:rgba(48,209,88,.1);color:var(--green)}
+  .alert.warn{background:rgba(255,159,10,.12);color:var(--orange)}
+  .alert.danger{background:rgba(255,69,58,.12);color:var(--red)}
+  .change{font-size:10px;color:var(--sub);margin-top:8px;line-height:1.5}
+  .change b{color:var(--text);font-weight:600}
+  .empty{text-align:center;color:var(--sub);font-size:12px;padding:40px}
+  .foot{text-align:center;color:var(--sub);font-size:11px;margin-top:18px}
+  .err{font-size:10px;color:var(--red);margin-top:8px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>__TITLE__</h1>
+      <div class="sub" id="summary">加载中 …</div>
+    </div>
+    <div class="pill" id="updated">—</div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="foot" id="foot">只读面板 · 自动刷新</div>
+</div>
+<script>
+const DATA = __DATA__;
+const SHARE = __SHARE__;
+const API = __API__;
+const REFRESH = __REFRESH__;
+let state = DATA;
+
+function esc(v){
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function num(v, d){ v = Number(v); return isFinite(v) ? v : (d || 0); }
+function gb(v){ v = num(v); return v >= 100 ? v.toFixed(1) : (v >= 1 ? v.toFixed(2) : (v*1024).toFixed(0)); }
+function unit(v){ v = num(v); return v >= 1 ? 'GB' : 'MB'; }
+function pct(cycle, cap){ cap = num(cap); return cap > 0 ? Math.min(100, num(cycle)/cap*100) : 0; }
+function color(p){ return p < 60 ? 'var(--green)' : (p < 85 ? 'var(--orange)' : 'var(--red)'); }
+function uptime(s){
+  s = num(s); if (!s) return '—';
+  var d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+  return d > 0 ? (d + '天' + h + '时') : (h > 0 ? (h + '时' + m + '分') : (m + '分'));
+}
+function svcCount(n){
+  var s = n.services || {}, total = 0, ok = 0, bad = [];
+  Object.keys(s).forEach(function(k){
+    if (k.endsWith('.timer')) return;
+    total++; if ((s[k]||{}).active === 'active') ok++; else bad.push(k);
+  });
+  return {total: total, ok: ok, bad: bad};
+}
+
+function render(){
+  var nodes = state || [];
+  var online = nodes.filter(function(n){ return n.online; }).length;
+  var total = nodes.length;
+  var used = 0, cap = 0, alerts = 0;
+  nodes.forEach(function(n){
+    var t = n.traffic || {};
+    used += num(t.cycle_gb); cap += num(t.cap_gb);
+    alerts += (t.alerts || []).length;
+  });
+  document.getElementById('summary').textContent =
+    online + '/' + total + ' 在线 · 已用 ' + used.toFixed(1) + ' / ' + cap.toFixed(0) + ' GB' +
+    (alerts ? (' · ' + alerts + ' 条告警') : '');
+  document.getElementById('updated').textContent = '更新 ' + new Date().toLocaleTimeString();
+
+  var grid = document.getElementById('grid');
+  if (!nodes.length){ grid.innerHTML = '<div class="card empty">还没有节点</div>'; return; }
+  var html = '';
+  nodes.forEach(function(n){
+    var t = n.traffic || {};
+    var capg = num(t.cap_gb), cyc = num(t.cycle_gb), today = num(t.today_gb), remain = num(t.remaining_gb);
+    var p = pct(cyc, capg);
+    var sc = svcCount(n);
+    var cls = n.online ? '' : ' offline';
+    var badge = n.online ? '<span class="badge ok">在线</span>' : '<span class="badge bad">离线</span>';
+    var host = SHARE ? '' : (n.host || '');
+    html += '<div class="card' + cls + '">';
+    html += '<div class="head"><div><div class="name">' + esc(n.title || n.node_id) + '</div>' +
+            (host ? '<div class="host">' + esc(host) + '</div>' : '') +
+            '</div>' + badge + '</div>';
+    if (!n.online){
+      html += '<div class="err">' + esc(n.error || 'unreachable') + '</div></div>';
+      return;
+    }
+    html += '<div class="big"><div class="num">' + gb(cyc) + '<small> ' + unit(cyc) + '</small></div>' +
+            '<div class="cap">周期额度<br><b>' + capg.toFixed(0) + ' GB</b></div></div>';
+    html += '<div class="bar"><div class="fill" style="width:' + p.toFixed(1) + '%;background:' + color(p) + '"></div></div>';
+    html += '<div class="meta"><span>已用 ' + p.toFixed(1) + '%</span><span>剩余 ' + gb(remain) + ' ' + unit(remain) + '</span></div>';
+    html += '<div class="stats">' +
+      '<div class="stat"><b>' + gb(today) + '</b><span>今日 ' + unit(today) + '</span></div>' +
+      '<div class="stat"><b>' + gb(t.down_gb) + '</b><span>下载</span></div>' +
+      '<div class="stat"><b>' + gb(t.up_gb) + '</b><span>上传</span></div>' +
+      '<div class="stat"><b>' + uptime(n.uptime_seconds) + '</b><span>uptime</span></div>' +
+      '</div>';
+    var days = t.days || [];
+    if (days.length){
+      var max = Math.max.apply(null, days.map(function(d){ return num(d.gb); }).concat([0.01]));
+      html += '<div class="bars">';
+      days.forEach(function(d, i){
+        var h = Math.max(2, Math.round(num(d.gb)/max*44));
+        html += '<div class="col' + (i === days.length-1 ? ' today' : '') + '">' +
+                '<div class="b" style="height:' + h + 'px"></div>' +
+                '<div class="d">' + esc(d.label) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="svc">';
+    html += '<span class="chip ' + (sc.bad.length ? 'bad' : 'ok') + '">服务 ' + sc.ok + '/' + sc.total + '</span>';
+    if (!SHARE){
+      sc.bad.forEach(function(b){ html += '<span class="chip bad">' + esc(b) + '</span>'; });
+      if (n.xray && n.xray.length) html += '<span class="chip">' + esc(n.xray[0]) + '</span>';
+    }
+    html += '</div>';
+    var al = t.alerts || [];
+    if (al.length){
+      al.slice(0, 3).forEach(function(a){
+        var sev = a.sev === 2 ? 'danger' : 'warn';
+        html += '<div class="alert ' + sev + '">● ' + esc(a.txt) + '</div>';
+      });
+    } else {
+      html += '<div class="alert ok">● 无告警</div>';
+    }
+    if (!SHARE && n.changes && n.changes.length){
+      var c = n.changes[n.changes.length-1];
+      html += '<div class="change"><b>' + esc(c.title || '') + '</b> · ' + esc(c.time || '') + '</div>';
+    }
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+async function refresh(){
+  try {
+    var r = await fetch(API, {cache:'no-store'});
+    if (!r.ok) return;
+    state = await r.json();
+    render();
+  } catch (e) {}
+}
+
+render();
+setInterval(refresh, Math.max(5, REFRESH) * 1000);
+</script>
+</body>
+</html>

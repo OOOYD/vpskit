@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vpskit"
+version = "1.0.0"
+description = "通用、幂等、可验证的 Debian/Ubuntu VPS 部署工具（nftables + Xray REALITY + 监控 + 面板）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "OOOYD"}]
+keywords = ["vps", "xray", "reality", "nftables", "debian", "ops", "monitoring"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: System :: Systems Administration",
+  "Topic :: Internet :: Proxy Servers",
+]
+dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["build>=1.0", "ruff>=0.5"]
+
+[project.scripts]
+vpskit = "vpskitlib.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/OOOYD/vpskit"
+Repository = "https://github.com/OOOYD/vpskit"
+Issues = "https://github.com/OOOYD/vpskit/issues"
+Documentation = "https://github.com/OOOYD/vpskit/tree/main/docs"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["vpskitlib*"]
+
+[tool.setuptools.package-data]
+vpskitlib = [
+  "panel.html",
+  "remote_scripts/*",
+  "assets/opt/**/*",
+  "assets/units/*",
+]

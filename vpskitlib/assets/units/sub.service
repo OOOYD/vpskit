@@ -1,0 +1,24 @@
+[Unit]
+Description=vpskit Subscription Server
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+NoNewPrivileges=true
+ExecStart=/usr/bin/python3 /opt/sub/sub.py
+Restart=always
+RestartSec=3
+LimitNOFILE=4096
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6
+ReadOnlyPaths=/opt/sub /opt/traffic
+
+[Install]
+WantedBy=multi-user.target

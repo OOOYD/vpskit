@@ -1,0 +1,15 @@
+# 机器专属/秘密/生成物
+nodes.yaml
+nodes.yaml.bak.*
+state/
+build/
+legacy/
+dist/
+config-*.yaml
+*.log
+*.tmp
+*.bak.*
+__pycache__/
+*.pyc
+.DS_Store
+.venv/

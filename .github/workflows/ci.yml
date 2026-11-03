@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install deps
+        run: python -m pip install --upgrade pip setuptools wheel pyyaml
+      - name: Install package
+        run: python -m pip install --no-deps -e .
+      - name: Console entry point
+        run: vpskit --version
+      - name: Unit tests
+        run: python -m unittest discover -v
+      - name: Compile
+        run: python -m compileall -q vpskitlib tests
+      - name: Shell syntax
+        run: |
+          bash -n install.sh
+          bash -n scripts/check-secrets.sh
+          for f in vpskitlib/assets/opt/ops/ops vpskitlib/assets/opt/ops/xray_selfheal.sh vpskitlib/assets/opt/traffic/traffic-snapshot.sh; do bash -n "$f"; done
+      - name: Secret scan (working tree)
+        run: ./scripts/check-secrets.sh

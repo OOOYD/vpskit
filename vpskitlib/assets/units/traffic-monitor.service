@@ -1,0 +1,12 @@
+[Unit]
+Description=vpskit Traffic Monitor (summary.json + per-IP)
+After=network.target nftables.service
+
+[Service]
+Type=oneshot
+Nice=10
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/python3 /opt/traffic/monitor.py
+ProtectSystem=strict
+ReadWritePaths=/opt/traffic /var/lib/vnstat /root/ops
+PrivateTmp=true

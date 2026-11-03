@@ -1,0 +1,266 @@
+#!/bin/bash
+# ============================================================
+# ops — 变更管理：快照 / 备份 / 核实 / 台账 / 回滚
+# 设计：Markdown 给人看，JSONL 给面板/AI 读；写台账加 flock，防并发交错。
+# ============================================================
+set -u
+OPS_DIR="/root/ops"
+SNAP_DIR="$OPS_DIR/snapshots"
+BAK_DIR="$OPS_DIR/backups"
+LOG_FILE="$OPS_DIR/changelog.md"
+ARB_LOG_FILE="$OPS_DIR/changelog-arb.md"
+JSONL="/opt/traffic/changelog.jsonl"
+LOCK="$OPS_DIR/.changelog.lock"
+
+FILES=(
+  "/etc/nftables.conf"
+  "/etc/sysctl.d/99-vpskit.conf"
+  "/etc/ssh/sshd_config.d/99-vpskit.conf"
+  "/etc/fail2ban/jail.local"
+  "/etc/shadowsocks-libev/config.json"
+  "/usr/local/etc/xray/config.json"
+  "/opt/stash/config.yaml"
+  "/opt/traffic/server.py"
+  "/opt/traffic/monitor.py"
+  "/opt/traffic/autoban.py"
+  "/opt/traffic/audit_auth.py"
+  "/opt/traffic/kitconf.py"
+  "/opt/sub/sub.py"
+  "/opt/sub/data"
+  "/usr/local/bin/ops"
+  "/usr/local/bin/vpskit-status"
+  "/usr/local/bin/traffic-snapshot.sh"
+  "/opt/ops/xray_selfheal.sh"
+  "/etc/systemd/system/xray.service"
+  "/etc/systemd/system/ss-server.service"
+  "/etc/systemd/system/traffic-web.service"
+  "/etc/systemd/system/traffic-monitor.service"
+  "/etc/systemd/system/traffic-monitor.timer"
+  "/etc/systemd/system/traffic-snapshot.service"
+  "/etc/systemd/system/traffic-snapshot.timer"
+  "/etc/systemd/system/sub.service"
+  "/etc/systemd/system/autoban.service"
+  "/etc/systemd/system/autoban.timer"
+  "/etc/systemd/system/xray-selfheal.service"
+  "/etc/systemd/system/xray-selfheal.timer"
+  "/etc/logrotate.d/vpskit"
+  "/etc/systemd/journald.conf.d/vpskit.conf"
+  "/etc/apt/apt.conf.d/20auto-upgrades"
+)
+
+SERVICES=(xray ss-server traffic-web sub nftables fail2ban traffic-monitor.timer autoban.timer xray-selfheal.timer traffic-snapshot.timer ssh)
+
+ts() { TZ=Asia/Shanghai date "+%Y-%m-%d %H:%M:%S"; }
+
+node_id() {
+  if [ -f "$OPS_DIR/kit-node-info.yaml" ]; then
+    awk -F': *' '/^node_id:/{print $2; exit}' "$OPS_DIR/kit-node-info.yaml" 2>/dev/null
+  fi
+}
+
+cmd_snapshot() {
+  local name="${1:-}"
+  [ -z "$name" ] && { echo "用法: ops snapshot <名称>"; exit 1; }
+  mkdir -p "$OPS_DIR" "$SNAP_DIR"
+  local dir="$SNAP_DIR/$name"
+  mkdir -p "$dir"
+  : > "$dir/files.sha256"
+  for f in "${FILES[@]}"; do
+    [ -f "$f" ] && sha256sum "$f" >> "$dir/files.sha256"
+  done
+  nft list ruleset > "$dir/nft.ruleset" 2>/dev/null
+  : > "$dir/services.txt"
+  for s in "${SERVICES[@]}"; do
+    echo "$s $(systemctl is-active "$s" 2>/dev/null)" >> "$dir/services.txt"
+  done
+  ss -tlnp 2>/dev/null | grep -E ':22 |:443 |:40244|:8888|:19000' > "$dir/ports.txt"
+  ts > "$dir/timestamp"
+  echo "✅ 快照已保存: $dir"
+}
+
+cmd_backup() {
+  local name="${1:-}"
+  [ -z "$name" ] && { echo "用法: ops backup <名称>"; exit 1; }
+  mkdir -p "$OPS_DIR" "$BAK_DIR"
+  local dir="$BAK_DIR/$name"
+  mkdir -p "$dir"
+  local n=0
+  for f in "${FILES[@]}"; do
+    if [ -e "$f" ]; then
+      local rel="${f#/}"
+      mkdir -p "$dir/$(dirname "$rel")"
+      cp -a "$f" "$dir/$rel" 2>/dev/null && n=$((n+1))
+    fi
+  done
+  echo "✅ 备份已保存: $dir（$n 项）"
+}
+
+cmd_rollback() {
+  local name="${1:-}" file="${2:-}"
+  if [ -z "$name" ] || [ -z "$file" ]; then
+    echo "用法: ops rollback <备份名> <文件完整路径>"; exit 1
+  fi
+  local dir="$BAK_DIR/$name"
+  [ -d "$dir" ] || { echo "❌ 备份不存在: $name（ops list 查看）"; exit 1; }
+  local rel="${file#/}"
+  local src="$dir/$rel"
+  [ -e "$src" ] || src="$dir/$(basename "$file")"
+  [ -e "$src" ] || { echo "❌ 备份中没有该文件，可用项："; find "$dir" -type f | sed "s|$dir/||"; exit 1; }
+  cp -a "$src" "$file"
+  echo "✅ 已恢复: $file（来自 $name）"
+  case "$file" in
+    */server.py) systemctl restart traffic-web; echo "已重启 traffic-web" ;;
+    */nftables.conf) if nft -c -f "$file"; then nft -f "$file"; systemctl restart fail2ban; echo "已重载防火墙 + fail2ban"; fi ;;
+    */monitor.py) systemctl start traffic-monitor.service; echo "已触发监控" ;;
+    */xray/config.json) systemctl restart xray; echo "已重启 xray" ;;
+    */shadowsocks-libev/config.json) systemctl restart ss-server; echo "已重启 ss-server" ;;
+    */kitconf.py|*/sub.py) systemctl restart sub traffic-web; echo "已重启 sub/traffic-web" ;;
+    */99-vpskit.conf) if sshd -t; then systemctl reload ssh 2>/dev/null || systemctl reload sshd; echo "已重载 sshd"; fi ;;
+    *) echo "（未配置自动重启，请手动重启相关服务）" ;;
+  esac
+}
+
+cmd_diff() {
+  local name="${1:-}"
+  [ -z "$name" ] && { echo "用法: ops diff <快照名称>"; exit 1; }
+  local dir="$SNAP_DIR/$name"
+  [ -d "$dir" ] || { echo "❌ 快照不存在: $name（ops list 查看）"; exit 1; }
+  echo "=== 与快照 [$name] 的差异 ==="
+  echo "--- 文件变化 ---"
+  local changed=0
+  while read -r sum f; do
+    if [ -f "$f" ]; then
+      local cur
+      cur=$(sha256sum "$f" | awk '{print $1}')
+      if [ "$cur" != "$sum" ]; then echo "  [已修改] $f"; changed=1; fi
+    else
+      echo "  [已删除] $f"; changed=1
+    fi
+  done < "$dir/files.sha256"
+  [ "$changed" = "0" ] && echo "  （无文件变化）"
+  echo "--- 防火墙变化（已过滤动态集合元素/计数器）---"
+  diff <(grep -vE 'expires|elements =' "$dir/nft.ruleset" | sed -E 's/packets [0-9]+ bytes [0-9]+/packets N bytes N/g') \
+       <(nft list ruleset 2>/dev/null | grep -vE 'expires|elements =' | sed -E 's/packets [0-9]+ bytes [0-9]+/packets N bytes N/g') | head -20
+  echo "--- 服务状态变化 ---"
+  while read -r s st; do
+    local cur
+    cur=$(systemctl is-active "$s" 2>/dev/null)
+    [ "$cur" != "$st" ] && echo "  [$s]: $st → $cur"
+  done < "$dir/services.txt"
+  echo "=== 核实完成 ==="
+}
+
+cmd_log() {
+  local req="" author="" target="$LOG_FILE" tag="变更" level="一般" icon="🔵"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -r) req="${2:-}"; shift 2 ;;
+      -a) author="${2:-}"; shift 2 ;;
+      -t) tag="${2:-}"; shift 2 ;;
+      -l) level="${2:-}"; shift 2 ;;
+      -i) icon="${2:-}"; shift 2 ;;
+      -w|--arb) target="$ARB_LOG_FILE"; shift ;;
+      --) shift; break ;;
+      -*) echo "未知参数: $1"; exit 1 ;;
+      *) break ;;
+    esac
+  done
+  [ $# -eq 0 ] && { echo "用法: ops log [-r 需求] [-a 作者] [-t 标签] [-l 级别] [-i 图标] [-w] <变更说明>"; exit 1; }
+  [ -z "$author" ] && author="未知"
+  local body="$*"
+  local node
+  node="$(node_id)"
+  mkdir -p "$OPS_DIR" /opt/traffic
+  : >> "$JSONL"
+  chmod 644 "$JSONL" 2>/dev/null || true
+  exec 9> "$LOCK"
+  flock -x 9
+  {
+    echo ""
+    echo "### $(ts) [$tag] $icon $level · $body"
+    [ -n "$req" ] && echo "> 需求：$req"
+    echo "> 作者：$author"
+    echo "- 变更: $body"
+  } >> "$target"
+  python3 - "$(ts)" "$tag" "$level" "$icon" "$body" "$req" "$author" "$node" "$JSONL" <<'PY'
+import json, os, sys
+ts, tag, level, icon, body, why, author, node, path = sys.argv[1:10]
+rec = {"time": ts, "tag": tag, "level": level, "icon": icon,
+       "title": body, "why": why, "body": body, "author": author, "node": node}
+with open(path, "a", encoding="utf-8") as f:
+    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+os.chmod(path, 0o644)
+PY
+  flock -u 9
+  exec 9>&-
+  if [ "$target" = "$ARB_LOG_FILE" ]; then
+    echo "✅ 已记录到 changelog-arb.md + JSONL"
+  else
+    echo "✅ 已记录到 changelog.md + JSONL"
+  fi
+}
+
+cmd_status() {
+  local node host
+  node="$(node_id)"
+  host="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  echo "========== $node @ $host =========="
+  echo "=== 服务状态 ==="
+  for s in "${SERVICES[@]}"; do
+    printf "  %-24s %s\n" "$s" "$(systemctl is-active "$s" 2>/dev/null)"
+  done
+  echo "=== 监听端口 ==="
+  ss -tlnp 2>/dev/null | grep -E ':22 |:443 |:40244|:8888|:19000' | awk '{print "  " $4}'
+  echo "=== 最近变更 ==="
+  tail -12 "$LOG_FILE" 2>/dev/null
+}
+
+cmd_changelog() {
+  local n=50 target="$LOG_FILE" json=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -n) n="${2:-50}"; shift 2 ;;
+      -w|--arb) target="$ARB_LOG_FILE"; shift ;;
+      --json) json=1; shift ;;
+      *) shift ;;
+    esac
+  done
+  if [ "$json" = "1" ]; then
+    tail -n "$n" "$JSONL" 2>/dev/null || echo ""
+  elif [ -f "$target" ]; then
+    tail -n "$n" "$target"
+  else
+    echo "（台账为空：$target）"
+  fi
+}
+
+cmd_list() {
+  echo "=== 快照 ==="
+  ls "$SNAP_DIR" 2>/dev/null || echo "  （无）"
+  echo "=== 备份 ==="
+  ls "$BAK_DIR" 2>/dev/null || echo "  （无）"
+}
+
+case "${1:-}" in
+  snapshot) shift; cmd_snapshot "${1:-}" ;;
+  backup)   shift; cmd_backup "${1:-}" ;;
+  diff)     shift; cmd_diff "${1:-}" ;;
+  log)      shift; cmd_log "$@" ;;
+  status)   cmd_status ;;
+  list)     cmd_list ;;
+  changelog) shift; cmd_changelog "$@" ;;
+  rollback) shift; cmd_rollback "${1:-}" "${2:-}" ;;
+  help|*) cat <<'HELP'
+ops — 变更管理（vpskit）
+  ops snapshot <名称>   保存文件校验/防火墙/服务/端口快照
+  ops backup <名称>     备份关键文件与订阅目录（/root/ops 下，root-only）
+  ops rollback <备份> <文件>  恢复单个文件并自动重启对应服务
+  ops diff <名称>       对比当前与快照
+  ops log [-r 需求] [-a 作者] [-t 标签] [-l 级别] [-i 图标] [-w] <说明>
+                        写 Markdown + JSONL（/opt/traffic/changelog.jsonl）
+  ops changelog [-n N] [-w] [--json]  查看台账
+  ops status            健康概览
+  ops list              列出快照/备份
+HELP
+    ;;
+esac

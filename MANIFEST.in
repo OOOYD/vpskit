@@ -1,0 +1,5 @@
+include README.md LICENSE SECURITY.md CHANGELOG.md CONTRIBUTING.md AGENTS.md llms.txt
+recursive-include vpskitlib *.html *.py *.sh
+recursive-include vpskitlib/assets *
+recursive-include docs *.md
+recursive-include scripts *.py *.sh

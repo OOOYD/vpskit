@@ -1,0 +1,50 @@
+# vpskit 节点清单示例
+#   1) cp nodes.example.yaml nodes.yaml
+#   2) 改 host / clients / admin_ips / 配额
+#   3) ./vpskit plan <node> --show-diff
+#   4) ./vpskit apply <node> --yes
+#
+# 秘密不写在这里：首次 apply 生成到 state/<node>/secrets.json（0600，gitignored）。
+version: 1
+
+defaults:
+  ssh_user: root
+  ssh_port: 22
+  profile: strict          # strict=全量限速；mild=只做 SSH 限速 + 默认 drop
+  has_v6: auto             # auto=按远端探测；true/false 可强制
+  quota_gb: 500
+  quota_anchor_day: 29     # 厂商计费周期起点（每月几号）
+  daily_alert_gb: 20
+  daily_hard_gb: 30
+  admin_ips: []            # 家里/公司出口 IP 或 CIDR；apply 时会把当前 SSH 来源临时加进去
+  xray_version: "26.7.28"  # 写死版本，不要用 latest
+
+panel:
+  listen: 127.0.0.1
+  port: 8787
+  refresh_seconds: 30
+  # token: ""              # 监听非本机地址时必须设置
+  # share_token: ""        # 朋友只读分享链接；会脱敏 IP/端口
+
+nodes:
+  new-vps:
+    host: 203.0.113.10
+    ssh_alias: ""          # 填了就走 ~/.ssh/config 的别名；否则用 ssh_user@host:ssh_port
+    title: 新 VPS
+    clients:
+      - email: main
+        flow: xtls-rprx-vision
+      # - email: friend1
+      #   flow: ""
+    # reality_dest: www.iana.org:443
+    # reality_max_time_diff: 60000
+    # ss_enable: true
+    # ss_port: 40244
+    # sub_enable: true
+    # sub_port: 8888
+    # traffic_web_enable: true
+    # traffic_web_port: 19000
+    # traffic_web_allow_ips: []   # 留空=公开但需要 key；填了=只允许这些 IP/CIDR
+    # sub_allow_ips: []
+    # extra_web_ports:
+    #   - {port: 80, rate: 12}

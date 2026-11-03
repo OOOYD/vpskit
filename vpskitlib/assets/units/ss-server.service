@@ -1,0 +1,19 @@
+[Unit]
+Description=Shadowsocks Server
+After=network.target
+
+[Service]
+User=nobody
+Group=nogroup
+NoNewPrivileges=true
+ExecStart=/usr/bin/ss-server -c /etc/shadowsocks-libev/config.json
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/etc/shadowsocks-libev
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+name: Feature request
+description: 建议一个新能力
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes: {label: 你遇到的问题}
+  - type: textarea
+    id: proposal
+    attributes: {label: 期望的方案}
+  - type: textarea
+    id: alternatives
+    attributes: {label: 备选方案/取舍}

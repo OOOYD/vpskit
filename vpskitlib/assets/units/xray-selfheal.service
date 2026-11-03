@@ -1,0 +1,11 @@
+[Unit]
+Description=vpskit xray conditional self-heal
+After=network.target xray.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/xray-selfheal
+ExecStart=/opt/ops/xray_selfheal.sh
+ProtectSystem=full
+ReadWritePaths=/opt/ops
+PrivateTmp=true

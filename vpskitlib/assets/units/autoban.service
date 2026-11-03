@@ -1,0 +1,11 @@
+[Unit]
+Description=vpskit Auto-ban unauthenticated heavy traffic IPs
+After=network-online.target
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/usr/bin/python3 /opt/traffic/autoban.py
+ProtectSystem=strict
+ReadWritePaths=/opt/traffic
+PrivateTmp=true
