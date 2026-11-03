@@ -14,6 +14,7 @@
 ## 文档
 
 - [README](README.md)
+- [使用手册](docs/USER-GUIDE.md)
 - [AI 使用](docs/AI.md)
 - [配置](docs/CONFIG.md)
 - [架构](docs/ARCHITECTURE.md)

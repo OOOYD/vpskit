@@ -17,6 +17,8 @@ Shadowsocks(v6 备份)、订阅页、流量页、autoban、fail2ban、自愈、�
 
 ---
 
+> 第一次用？直接看 **[docs/USER-GUIDE.md](docs/USER-GUIDE.md)**（从买 VPS 到客户端导入的完整手册）。
+
 ## 快速开始
 
 ### 0. 安装
@@ -233,6 +235,7 @@ git push -u origin main
 
 ## 文档
 
+- `docs/USER-GUIDE.md` — 完整使用手册（推荐第一次读）
 - `docs/PUBLISH.md` — GitHub 公开发布、朋友安装、旧历史处理
 - `docs/CONFIG.md` — 全部配置字段
 - `docs/ARCHITECTURE.md` — 状态布局、apply 顺序、防火墙保险丝

@@ -33,6 +33,8 @@ git ls-files | grep -E '^(templates|state|build|legacy)/|^nodes\.yaml$' || echo 
 ## 朋友下载/安装
 
 ```bash
+使用手册：[USER-GUIDE.md](USER-GUIDE.md)
+
 # 方式 A：clone
 git clone https://github.com/OOOYD/vpskit.git
 cd vpskit

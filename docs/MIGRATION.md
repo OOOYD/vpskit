@@ -48,7 +48,7 @@ git push -u origin main
 ## 二、把现网节点纳入工具（adopt）
 
 ```bash
-./vpskit adopt tokyo --host 103.201.130.126 --ssh-alias tokyo --title '东京 VPS'
+./vpskit adopt tokyo --host <VPS_IP> --ssh-alias tokyo --title '东京 VPS'
 ```
 
 它会只读导入：
