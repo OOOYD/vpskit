@@ -14,8 +14,8 @@ class ServerRenderTest(unittest.TestCase):
         d = Path(self.td.name)
         (d / "kitconf.py").write_text(
             'TITLE="测试 <节点>"\nTRAFFIC_WEB_PORT=19000\nTRAFFIC_WEB_KEY="abc"\n'
-            'SUMMARY_PATH="%s/summary.json"\nCHANGELOG_JSONL="%s/changelog.jsonl"\nCAP_GB=500\n'
-            % (d, d),
+            'SUMMARY_PATH=%s\nCHANGELOG_JSONL=%s\nCAP_GB=500\n'
+            % (json.dumps(str(d / "summary.json")), json.dumps(str(d / "changelog.jsonl"))),
             encoding="utf-8",
         )
         sys.path.insert(0, str(d))

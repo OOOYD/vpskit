@@ -11,6 +11,13 @@ import stat
 import subprocess
 import sys
 from pathlib import Path
+
+# Windows 控制台默认 cp1252，中文日志会 UnicodeEncodeError；统一改 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple
 
 # ---------------------------------------------------------------- exceptions
