@@ -31,7 +31,7 @@ class ServicesTest(unittest.TestCase):
             ROOT / "vpskitlib/assets/opt/ops/ops"
         ]:
             text = path.read_text(encoding="utf-8", errors="replace")
-            self.assertNotIn("103.201.130", text, str(path))
+            self.assertNotIn("/Users/oyd", text, str(path))
             self.assertNotIn("1031894364@qq.com", text, str(path))
 
     def test_no_legacy_templates_in_worktree(self):

@@ -7,7 +7,7 @@ from vpskitlib import panel
 SAMPLE = [
     {
         "node_id": "n1",
-        "title": "东京",
+        "title": "节点A",
         "host": "203.0.113.10",
         "online": True,
         "error": "",

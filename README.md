@@ -11,9 +11,8 @@ Shadowsocks(v6 备份)、订阅页、流量页、autoban、fail2ban、自愈、�
 - 秘密只生成一次：`state/<node>/secrets.json`（0600），重复 apply 不会换 UUID/密钥
 - 每个节点独立配置：`nodes.yaml`；秘密不写在这个文件里
 
-> 这是 v1.0 重写版。旧的 `install.sh` 只作为兼容入口保留；旧模板/旧脚本移到 `legacy/`
-> （gitignored），旧 Git 历史里仍有生产秘密，**不要直接把旧历史推到 GitHub**。
-> 细节见 `docs/MIGRATION.md`。
+> 这是 v1.0 重写版。旧的 `install.sh` 只作为兼容入口保留；旧版文件请留在本地，
+> 不要提交。公开仓库只包含代码、文档和示例配置。
 
 ---
 
@@ -160,7 +159,7 @@ docs/                  配置/架构/安全/运维/迁移/AI/发布
 tests/                 单元测试（44 个）
 AGENTS.md              AI/Agent 使用约定
 llms.txt               给 LLM 的索引入口
-legacy/                旧版文件（gitignored，含旧秘密，勿提交）
+legacy/                旧版本地文件（gitignored）
 ```
 
 ---
@@ -170,8 +169,8 @@ legacy/                旧版文件（gitignored，含旧秘密，勿提交）
 - 秘密在 `state/<node>/secrets.json`，0600；`build/`、`state/`、`nodes.yaml` 都 gitignored。
 - `vpskit show <node>` 只显示指纹；`--secrets` 才显示原文（会警告）。
 - 轮换：`vpskit rotate <node> --all --yes`，然后 `plan` / `apply`；客户端需要重新导入。
-- **旧 Git 历史**：`legacy/templates/` 曾经包含 live 的 REALITY 私钥/UUID/SS 密码。
-  不要推送旧历史；如果已经推送过，视为泄露并立即轮换。推荐新建仓库，只提交当前清洗后的树。
+- **旧版历史**：如果旧仓库曾经包含真实秘密，不要把旧历史推到公开仓库；
+  必要时 `vpskit rotate <node> --all` 轮换。
 - 建议加 `gitleaks` pre-commit；CI 里也加 secret scan。
 
 ---
@@ -197,17 +196,17 @@ legacy/                旧版文件（gitignored，含旧秘密，勿提交）
 **已验证（2026-11-03）**
 
 - 44 个单元测试通过（`python3 -m unittest discover -v`）
-- 在 Debian 13（东京生产）上只读校验生成的配置：
+- 在 Debian 13 测试机上只读校验生成的配置：
   - `nft -c -f /tmp/.../nftables.conf` → rc=0
   - `xray run -test -config /tmp/.../xray.json` → `Configuration OK.`
   - `sshd -t -f <temp config>` → rc=0
   - `systemd-analyze verify` 仅 `User=nobody` 警告
   - Python 编译、shell `bash -n`、logrotate `-d` 通过
-- 对东京跑过一次完整只读 `plan`：24 changed / 9 new / 1 mode，`nft: ok`、`xray: ok`，未改动远端
+- 对测试节点跑过一次完整只读 `plan`：24 changed / 9 new / 1 mode，`nft: ok`、`xray: ok`，未改动远端
 
 **未验证**
 
-- 全新 VPS 的完整 `apply`（需要一台一次性机器；东京是生产，不能拿来试）
+- 全新 VPS 的完整 `apply`（需要一台一次性机器；测试机是唯一生产机，不能拿来试）
 - Ubuntu 22.04/24.04、arm64、纯 v4 / 纯 v6 的矩阵
 - 防火墙把自己锁死后的真实恢复演练（代码有保险丝，未在真实断连中演练）
 - 订阅 YAML 在 Stash/Clash 各版本的实际导入
@@ -216,16 +215,6 @@ legacy/                旧版文件（gitignored，含旧秘密，勿提交）
 首次上线建议：先 `plan`，再在一台一次性 VPS 上 `apply`；确认后再对生产 `apply`。
 
 ---
-
-## 发布与分享
-
-公开仓库/给朋友下载的步骤见 `docs/PUBLISH.md`：
-
-```bash
-# 维护者：推 main
-git push -u origin main
-# 朋友：clone 后自己 cp nodes.example.yaml nodes.yaml
-```
 
 ## 给 AI / 自动化
 
@@ -236,12 +225,11 @@ git push -u origin main
 ## 文档
 
 - `docs/USER-GUIDE.md` — 完整使用手册（推荐第一次读）
-- `docs/PUBLISH.md` — GitHub 公开发布、朋友安装、旧历史处理
 - `docs/CONFIG.md` — 全部配置字段
 - `docs/ARCHITECTURE.md` — 状态布局、apply 顺序、防火墙保险丝
 - `docs/SECURITY.md` — 威胁模型、秘密、AI Agent 规则
 - `docs/OPERATIONS.md` — 加节点、轮换、回滚、排障
-- `docs/MIGRATION.md` — 从旧 kit / 东京生产迁移
+- `docs/MIGRATION.md` — 从旧版迁移
 
 ## License
 

@@ -27,5 +27,5 @@
 
 ### Verified
 
-- 东京 Debian 13 真实 apply + `verify` 全绿；`plan --check` 幂等（same=33）
+- Debian 13 测试机真实 apply + `verify` 全绿；`plan --check` 幂等（same=33）
 - fail2ban 文档 IP 封/解、订阅/流量页 200、面板鉴权/分享、daily 快照/备份

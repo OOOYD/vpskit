@@ -241,6 +241,8 @@ nodes:
 - 公开仓库只放代码；`state/`、`build/`、`nodes.yaml` 永远不要上传/打包发人
 - 订阅/流量页默认 HTTP；建议用 Caddy 加 HTTPS
 - 不要把 `show --secrets` 的内容贴到聊天/issue
+- 本地私有文件（`nodes.yaml`、`state/`、`build/`、`private/`）都在 `.gitignore` 里；
+  Git 只跟踪已加入版本库的文件，这些不会上传，也不会让云端和本地“自动变得不一样”
 - 旧历史如果曾推过，立即 `vpskit rotate <node> --all`
 - 面板只读；`apply/rollback/rotate` 必须人工确认
 

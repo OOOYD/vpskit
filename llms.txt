@@ -21,7 +21,6 @@
 - [安全](docs/SECURITY.md)
 - [运维](docs/OPERATIONS.md)
 - [迁移](docs/MIGRATION.md)
-- [发布](docs/PUBLISH.md)
 
 ## 安装
 

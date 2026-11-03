@@ -1,11 +1,11 @@
-# 迁移：从旧 kit / 东京生产到 vpskit
+# 迁移：从旧版到 vpskit
 
 ## 现状
 
-- 东京生产原本是手工维护的：`server.py`/`monitor.py`/`autoban.py`/`sub.py` 是硬编码版本，没有 `kitconf.py`；
+- 旧节点原本是手工维护的：`server.py`/`monitor.py`/`autoban.py`/`sub.py` 是硬编码版本，没有 `kitconf.py`；
   nftables 里还额外开了 80/4173；SS 在 v4/v6 都可达；订阅是 `/opt/stash/config.yaml` 一份共享文件。
 - 旧仓库的 `templates/*.host` 含有 live 的 REALITY 私钥、UUID、SS 密码；旧 Git 历史里也有。
-- 新工具在 2026-11-03 已经对东京做过一次真实 apply；当前 `plan` 为 `same=33`。
+- 新工具已经在旧节点上做过真实 apply；`plan` 为 `same=33`。
 
 ## 一、先处理 Git 历史（最重要）
 
@@ -18,8 +18,8 @@ git branch -a            # 只有 main（单提交，安全）
 ### 推荐：新建一个干净仓库
 
 ```bash
-cd /Users/oyd/Desktop/AI/vpskit
-# 当前树里的秘密都在 gitignored 的 state/ 与 nodes.yaml；legacy/ 也不要带
+cd <vpskit-repo>
+# 当前树里的秘密都在 gitignored 的 state/ 与 nodes.yaml；旧版文件不要带
 rsync -a --exclude .git --exclude legacy --exclude state --exclude build \
       --exclude nodes.yaml --exclude '*.bak.*' ./ ../vpskit-public/
 cd ../vpskit-public
@@ -48,7 +48,7 @@ git push -u origin main
 ## 二、把现网节点纳入工具（adopt）
 
 ```bash
-./vpskit adopt tokyo --host <VPS_IP> --ssh-alias tokyo --title '东京 VPS'
+./vpskit adopt tokyo --host <VPS_IP> --ssh-alias tokyo --title '<节点名>'
 ```
 
 它会只读导入：
@@ -58,7 +58,7 @@ git push -u origin main
 - 流量页 key/端口/标题/配额（从现网 `server.py` 解析，因为旧机器没有 `kitconf.py`）
 - 订阅路径（从 `sub.py` 的 `PATHS` 键解析，不是文件路径）
 - 额外端口（80、4173）
-- SS 是否真的在 v4 监听（`ss -tln`，不是只看 nft 放行）。东京实际只监听 `[::]:40244`，
+- SS 是否真的在 v4 监听（`ss -tln`，不是只看 nft 放行）。旧节点实际只监听 `[::]:40244`，
   所以收尾时把 `ss_expose_v4` 设为 false 并关闭 v4 40244；没有 IPv6 的客户端请走 REALITY。
 - fail2ban ignoreip 里的管理员 IP（如果现网没写，需要手动补 `admin_ips`）
 
@@ -124,7 +124,7 @@ git push -u origin main
 - 客户端刷新订阅、测 REALITY
 - `ssh tokyo ops status`
 
-2026-11-03 的实测结果：`verify` 全绿；订阅 200/9729B；流量页 200；`plan` same=33；
+一次实测结果：`verify` 全绿；订阅 200/9729B；流量页 200；`plan` same=33；
 fail2ban 用 `198.51.100.77` 封/解成功；`traffic-snapshot.service` 生成 daily 快照/备份。
 
 ## 六、首次 apply 踩过的坑
@@ -134,7 +134,7 @@ fail2ban 用 `198.51.100.77` 封/解成功；`traffic-snapshot.service` 生成 d
 - **订阅路径**：`sub.py` 的 `PATHS` 是 `{URL路径: 文件路径}`；adopt 必须取 **键**，不能取 value（value 是 `/opt/stash/config.yaml`）。
 - **额外端口**：旧 nftables 开了 80/4173；adopt 从 `tcp dport { ... } accept` 解析并写入 `extra_web_ports`。
 - **SS v4**：旧机器 nft 放行了 v4 40244，但 `ss-server` 实际只监听 `[::]`；adopt 现在按监听族判断，
-  东京最终为 `ss_expose_v4: false`，并关闭未使用的 v4 40244。
+  旧节点最终为 `ss_expose_v4: false`，并关闭未使用的 v4 40244。
 - **admin_ips**：旧 `jail.local` 没有非私网 IP 时 adopt 会得到空数组；需要手动补家里/公司出口。
 
 ## 七、新 VPS（非迁移）
