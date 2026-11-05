@@ -25,6 +25,7 @@
 4. 需要确认秘密是否一致时，用 `vpskit show <node>` 的指纹，不要 `--secrets`。
 5. `apply` 前确认：有备份路径、知道 `vpskit rollback <node>`、用户已授权。
 6. 不要在公共 issue/PR 里贴节点地址、UUID、订阅路径、流量 key。
+7. 生产改动只走 vpskit：改 assets/config → `plan` → `apply`；不要手改远端。
 
 ## 典型自动化
 

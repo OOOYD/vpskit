@@ -98,6 +98,7 @@ def verify_node(node: NodeConfig, root: Path, remote: Remote, *, prepared: Optio
     if node.selfheal_enable:
         _service_check(v, services, "xray-selfheal.timer")
     _service_check(v, services, "traffic-snapshot.timer")
+    _service_check(v, services, "unattr.timer")
 
     # 文件 hash
     hashes = remote.hash_files(p.remote_paths)
@@ -174,6 +175,24 @@ def verify_node(node: NodeConfig, root: Path, remote: Remote, *, prepared: Optio
             v.warnings.append("summary.json 超过 30 分钟未更新；检查 traffic-monitor.timer")
     except Exception as exc:
         v.add("traffic-summary", False, str(exc), critical=True)
+
+    # 未归属流量（可选，首次 apply 后才有）
+    try:
+        raw = remote.read_text_remote("/opt/traffic/unattr.json")
+        ua = json.loads(raw)
+        ch = ua.get("ch443") or {}
+        ss = ua.get("ch40244") or {}
+        v.add(
+            "unattr",
+            True,
+            "REALITY 未归属 %.2fGB/7d（日均 %.2f） · SS %.2fGB"
+            % (float(ch.get("total_gb") or 0), float(ch.get("daily_avg_gb") or 0), float(ss.get("total_gb") or 0)),
+            critical=False,
+        )
+        if ch.get("level") == "high":
+            v.warnings.append("REALITY 未归属流量日均 %.2f GB，超过阈值；检查 fallback/扫描器" % float(ch.get("daily_avg_gb") or 0))
+    except Exception as exc:
+        v.add("unattr", False, str(exc), critical=False)
 
     # fail2ban 运行
     try:

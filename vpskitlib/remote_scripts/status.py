@@ -20,6 +20,7 @@ SERVICES = [
     "autoban.timer",
     "xray-selfheal.timer",
     "traffic-snapshot.timer",
+    "unattr.timer",
     "ssh",
 ]
 
@@ -142,6 +143,7 @@ def main():
             summary["ips"] = summary["ips"][:30]
         if isinstance(summary.get("days"), list):
             summary["days"] = summary["days"][-7:]
+    unattr = load_json("/opt/traffic/unattr.json")
     info = parse_simple_yaml("/root/ops/kit-node-info.yaml")
     data = {
         "ok": True,
@@ -153,6 +155,7 @@ def main():
         "ports": ports(),
         "fail2ban": fail2ban(),
         "traffic": summary,
+        "unattr": unattr,
         "changes": changes(5),
         "mem": meminfo(),
         "disk": dict(zip(["total", "used", "free"], shutil.disk_usage("/"))),

@@ -25,7 +25,7 @@ build/<node>/plan.json         # 最近一次 plan 摘要
 /etc/nftables.conf
 /usr/local/etc/xray/config.json
 /etc/shadowsocks-libev/config.json
-/opt/traffic/{server,monitor,autoban,audit_auth,kitconf}.py
+/opt/traffic/{server,monitor,autoban,audit_auth,unattr,kitconf}.py
 /opt/sub/{sub.py,data/sub-*.yaml}
 /opt/ops/xray_selfheal.sh
 /usr/local/bin/{ops,vpskit-status,traffic-snapshot.sh}
@@ -129,6 +129,8 @@ build/<node>/plan.json         # 最近一次 plan 摘要
 
 ```
 nft sets (ss_clients) ── monitor.py(root,timer) ── summary.json (0644)
+nft set  (ss_node)   ── monitor.py(同上)      ── ch40244 hourly + ss_usage.json
+hourly/*.json + authed_ips.json ── unattr.py(hourly) ── unattr.json (REALITY 未归属 / SS 单列)
                                                     ├─ traffic-web (www-data) 读
                                                     └─ vpskit-status 读
 xray accepted 日志 ── autoban.py(root,timer) ── nft blackhole set

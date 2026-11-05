@@ -174,6 +174,12 @@ build/my-vps/client-import.md    # 0600，含秘密
 ./vpskit status
 ```
 
+`verify` 还检查 `unattr`（REALITY 未归属 / SS 单列）：
+
+```bash
+ssh <host> /opt/traffic/unattr.py
+```
+
 `verify` 检查：
 
 - 服务 active/enabled

@@ -29,6 +29,7 @@ KEY = str(_c("TRAFFIC_WEB_KEY", ""))
 TITLE = str(_c("TITLE", "VPS"))
 SUMMARY_PATH = _c("SUMMARY_PATH", "/opt/traffic/summary.json")
 CHANGELOG_JSONL = _c("CHANGELOG_JSONL", "/opt/traffic/changelog.jsonl")
+UNATTR_PATH = _c("UNATTR_PATH", "/opt/traffic/unattr.json")
 CAP_GB = float(_c("CAP_GB", 500))
 
 
@@ -42,6 +43,14 @@ def load_summary():
             return json.load(f)
     except Exception:
         return None
+
+
+def load_unattr():
+    try:
+        with open(UNATTR_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 
 def load_changes(limit=8):
@@ -77,7 +86,7 @@ def color_for(pct):
     return "#ff453a"
 
 
-def render_page(data, changes):
+def render_page(data, changes, unattr=None):
     if not data:
         return (
             "<!doctype html><meta charset='utf-8'><title>%s</title>"
@@ -145,6 +154,24 @@ def render_page(data, changes):
     if not ip_rows:
         ip_rows.append("<div class='muted'>暂无按 IP 数据</div>")
 
+    ua = unattr or {}
+    ch = ua.get("ch443") or {}
+    ss = ua.get("ch40244") or {}
+    if ch:
+        ua_level = "偏高" if ch.get("level") == "high" else "正常"
+        ua_color = "#ff9f0a" if ch.get("level") == "high" else "#30d158"
+        ua_html = (
+            "<div class='urow'><span>REALITY 未归属</span><b>%s GB</b></div>"
+            "<div class='urow'><span>7 天日均</span><b>%s GB</b><span style='color:%s'>%s</span></div>"
+            "<div class='urow'><span>SS 通道（单列）</span><b>%s GB</b></div>"
+            % (
+                esc(ch.get("total_gb", 0)), esc(ch.get("daily_avg_gb", 0)), ua_color, ua_level,
+                esc(ss.get("total_gb", 0)),
+            )
+        )
+    else:
+        ua_html = "<div class='muted'>unattr 尚未生成（下次小时任务后出现）</div>"
+
     change_html = []
     for c in changes:
         change_html.append(
@@ -192,6 +219,11 @@ h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
 .bv{{font-size:9px;color:var(--sub);margin-bottom:2px}}
 .bl{{font-size:9px;color:var(--sub);margin-top:4px;white-space:nowrap}}
 .alert{{font-size:11px;padding:8px 10px;border-radius:12px;margin-top:6px}}
+.urow{{display:flex;align-items:baseline;gap:8px;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line)}}
+.urow:last-child{{border-bottom:none}}
+.urow span:first-child{{color:var(--sub)}}
+.urow b{{font-variant-numeric:tabular-nums;font-weight:600}}
+.urow span:last-child{{font-size:10px}}
 .alert.ok{{background:rgba(48,209,88,.1);color:#30d158}}
 .alert.warn{{background:rgba(255,159,10,.12);color:#ff9f0a}}
 .alert.danger{{background:rgba(255,69,58,.12);color:#ff453a}}
@@ -238,6 +270,7 @@ h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
 </div>
 
 <div class="card"><div class="sub" style="margin:0 0 6px">告警</div>{alerts}</div>
+<div class="card"><div class="sub" style="margin:0 0 6px">未归属流量（7 天）</div>{ua_html}</div>
 <div class="card"><div class="sub" style="margin:0 0 6px">服务</div>{services}</div>
 <div class="card"><div class="sub" style="margin:0 0 6px">按 IP（Top {ip_count} / 共 {ip_total}）</div>{ips}</div>
 <div class="card"><div class="sub" style="margin:0 0 6px">最近变更</div>{changes}</div>
@@ -265,6 +298,7 @@ h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
         proj_unit=esc(proj_unit),
         bars="".join(bars),
         alerts=alert_html,
+        ua_html=ua_html,
         services=svc_html,
         ips="".join(ip_rows),
         ip_count=len(ips),
@@ -292,7 +326,7 @@ class Handler(BaseHTTPRequestHandler):
         if not KEY or not hmac.compare_digest(supplied, KEY):
             self.send_error(404)
             return
-        body = render_page(load_summary(), load_changes()).encode("utf-8")
+        body = render_page(load_summary(), load_changes(), load_unattr()).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")

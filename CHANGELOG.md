@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- `unattr.py`：未归属流量拆分版——REALITY `ch443` 单独阈值（1.5GB/天），SS `ch40244` 单列不误判
+- `monitor.py` 恢复 SS `ss_node` 计数器与 `ch40244` 小时留痕
+- 新增 `unattr.service` / `unattr.timer`；`verify`/`status`/流量页/面板展示
+- SSH 上传增加重试；Windows 控制端 UTF-8/锁/tar 修正与 Windows smoke CI
+- 文档：单一来源原则（生产不手改，只 `plan/apply`）
+
 ## 1.0.0 — 2026-11-03
 
 首个可复用版本。

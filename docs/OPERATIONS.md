@@ -119,6 +119,19 @@ fail2ban-client get sshd actions
   fail2ban-client set sshd unbanip 198.51.100.77
   ```
 
+### 未归属流量（unattr）
+
+```bash
+ssh <host> /opt/traffic/unattr.py          # 文本
+ssh <host> cat /opt/traffic/unattr.json    # JSON
+systemctl status unattr.timer
+```
+
+- `ch443` = REALITY 未归属；阈值 `1.5 GB/天`，连续偏高才需要归因
+- `ch40244` = SS，始终单列，不计入 ch443 阈值
+- 它是估算：依赖 7 天 hourly 留痕 + `authed_ips.json` 的 7 天窗口
+- 如果 `unattr.json` 不更新：`systemctl start unattr.service`；看 `journalctl -u unattr`
+
 ### 流量页 404
 
 - URL 必须带 `?k=`；key 在 `state/<node>/secrets.json` 的 `traffic_web_key`

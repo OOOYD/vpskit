@@ -140,6 +140,7 @@ SSH 加固校验 → 防火墙（保险丝+回连验证）→ 启动服务 → �
 | 主动反滥用 | autoban：未认证大流量阶梯封禁（6h→24h→72h），支持 dry-run、认证日志不可用时跳过 |
 | 代理 | Xray REALITY(443) + Shadowsocks(v6，可选 v4) |
 | 流量 | vnstat + per-IP nft counter；`summary.json`；流量页(19000) |
+| 未归属流量 | `unattr.py`：REALITY 未归属（7 天/日均/阈值）与 SS 通道分开统计；每小时写 `unattr.json` |
 | 订阅 | 每用户独立路径的 YAML；`sub.py` 以 www-data 只读 |
 | 自愈 | xray-selfheal 定时器（参数来自 `/etc/default/xray-selfheal`） |
 | 变更管理 | `ops` 快照/备份/diff/rollback/台账；Markdown + JSONL |
@@ -197,7 +198,7 @@ legacy/                旧版本地文件（gitignored）
 
 **已验证（2026-11-03）**
 
-- 44 个单元测试通过（`python3 -m unittest discover -v`）
+- 45 个单元测试通过（`python3 -m unittest discover -v`）
 - 在 Debian 13 测试机上只读校验生成的配置：
   - `nft -c -f /tmp/.../nftables.conf` → rc=0
   - `xray run -test -config /tmp/.../xray.json` → `Configuration OK.`

@@ -20,6 +20,7 @@ SERVICES = [
     "autoban.timer",
     "xray-selfheal.timer",
     "traffic-snapshot.timer",
+    "unattr.timer",
     "ssh",
 ]
 

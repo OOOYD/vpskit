@@ -292,6 +292,7 @@ def apply_node(
                 "traffic-web.service",
                 "fail2ban.service",
                 "traffic-monitor.timer",
+                "unattr.timer",
                 "traffic-snapshot.timer",
             ]
             if node.sub_enable:
@@ -335,6 +336,7 @@ def apply_node(
                 _restart(remote, "sub.service")
             _restart(remote, "fail2ban.service")
             remote.run("systemctl restart traffic-monitor.timer", check=False, timeout=30)
+            remote.run("systemctl restart unattr.timer", check=False, timeout=30)
             remote.run("systemctl restart traffic-snapshot.timer", check=False, timeout=30)
             if node.autoban_enable:
                 remote.run("systemctl restart autoban.timer", check=False, timeout=30)
@@ -346,6 +348,7 @@ def apply_node(
             remote.run("systemctl restart systemd-journald", check=False, timeout=30)
             remote.run("logrotate -d /etc/logrotate.d/vpskit >/dev/null 2>&1 || true", check=False, timeout=30)
             _apply_monitor(remote)
+            remote.run("systemctl start unattr.service", check=False, timeout=120)
             remote.run("systemctl start autoban.service", check=False, timeout=60)
 
             step("写状态")

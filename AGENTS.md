@@ -15,6 +15,8 @@
 4. **不要擅自 `rotate`**。轮换会让客户端断线；必须用户确认。
 5. **旧 `main` 历史已删除**（私有 bundle）；当前 `main` 是单提交干净历史，直接推 `main`。
 6. 生产改动前先 `ops snapshot`/备份；知道回滚命令：`vpskit rollback <node>`。
+7. **不要手改生产**。调参数/改服务只改 vpskit 的 assets/config，再 `plan`/`apply`；
+   手改会下次 apply 覆盖，或产生 plan 看不见的静默漂移。
 
 ## 标准工作流
 
@@ -52,7 +54,7 @@ vpskitlib/panel.py         # 只读面板
 vpskitlib/assets/opt/      # 部署到节点的服务源码
 vpskitlib/assets/units/    # systemd units
 vpskitlib/remote_scripts/  # 远端一次性脚本
-tests/                     # unittest，44 个
+tests/                     # unittest，45 个
 docs/                      # 配置/架构/安全/运维/迁移/AI/发布
 ```
 

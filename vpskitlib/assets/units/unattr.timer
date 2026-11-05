@@ -1,0 +1,10 @@
+[Unit]
+Description=Run vpskit unattributed traffic report hourly
+
+[Timer]
+OnCalendar=*:17
+Persistent=true
+AccuracySec=5min
+
+[Install]
+WantedBy=timers.target

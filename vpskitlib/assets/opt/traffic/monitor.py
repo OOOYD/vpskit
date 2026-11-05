@@ -54,6 +54,7 @@ AUTOBAN_ENABLE = bool(_c("AUTOBAN_ENABLE", True))
 HOURLY_DIR = os.path.join(BASE, "hourly")
 HOURLY_KEEP_DAYS = 7
 HOURLY_MAX_IPS = 8000
+SS_USAGE_PATH = os.path.join(BASE, "ss_usage.json")
 
 os.environ.setdefault("TZ", "Asia/Shanghai")
 try:
@@ -234,12 +235,46 @@ def collect_per_ip(now_text):
         prev["rx"] = current
     save_json(os.path.join(BASE, "ip_baseline.json"), baseline)
     save_json(os.path.join(BASE, "ip_usage.json"), usage)
-    record_hourly(hour)
-    return usage, baseline
+    return usage, baseline, hour
 
 
-def record_hourly(deltas):
-    if not deltas:
+def collect_ss(now_text):
+    """SS 通道单独记账；SS 用密码认证，不能靠 xray accepted 判归属。"""
+    baseline = load_json(os.path.join(BASE, "ip_baseline.json"), {})
+    usage = load_json(SS_USAGE_PATH, {})
+    meta = load_json(os.path.join(BASE, "meta.json"), {})
+    month = datetime.date.today().strftime("%Y-%m")
+    if meta.get("ss_month") and meta["ss_month"] != month:
+        usage = {}
+        print("[i] 跨月重置 SS 按 IP 统计")
+    meta["ss_month"] = month
+    save_json(os.path.join(BASE, "meta.json"), meta)
+
+    hour = {}
+    for ip, current in parse_set("ip6", "traffic6", "ss_node").items():
+        prev = baseline.get(ip)
+        if prev is None:
+            baseline[ip] = {"rx": 0, "tx": 0, "since": now_text, "ss": current}
+            continue
+        if "ss" not in prev:
+            prev["ss"] = current
+            continue
+        delta = current - int(prev.get("ss", 0))
+        if delta < 0:
+            delta = 0
+        if delta:
+            rec = usage.setdefault(ip, {"rx": 0, "tx": 0, "first_seen": now_text})
+            rec["rx"] += delta
+            rec["last_seen"] = now_text
+            hour[ip] = hour.get(ip, 0) + delta
+        prev["ss"] = current
+    save_json(os.path.join(BASE, "ip_baseline.json"), baseline)
+    save_json(SS_USAGE_PATH, usage)
+    return usage, hour
+
+
+def record_hourly(ch443, ch40244):
+    if not ch443 and not ch40244:
         return
     try:
         os.makedirs(HOURLY_DIR, exist_ok=True)
@@ -247,12 +282,13 @@ def record_hourly(deltas):
         path = os.path.join(HOURLY_DIR, "usage-%s.json" % stamp)
         cur = load_json(path, {})
         if not isinstance(cur, dict) or cur.get("hour") != stamp:
-            cur = {"hour": stamp, "ch443": {}}
-        bucket = cur.setdefault("ch443", {})
-        for ip, value in deltas.items():
-            bucket[ip] = bucket.get(ip, 0) + value
-        if len(bucket) > HOURLY_MAX_IPS:
-            cur["ch443"] = dict(sorted(bucket.items(), key=lambda kv: -kv[1])[:HOURLY_MAX_IPS])
+            cur = {"hour": stamp, "ch443": {}, "ch40244": {}}
+        for key, deltas in (("ch443", ch443), ("ch40244", ch40244)):
+            bucket = cur.setdefault(key, {})
+            for ip, value in deltas.items():
+                bucket[ip] = bucket.get(ip, 0) + value
+            if len(bucket) > HOURLY_MAX_IPS:
+                cur[key] = dict(sorted(bucket.items(), key=lambda kv: -kv[1])[:HOURLY_MAX_IPS])
         save_json(path, cur)
         cutoff = (datetime.date.today() - datetime.timedelta(days=HOURLY_KEEP_DAYS)).strftime("%Y%m%d")
         for name in os.listdir(HOURLY_DIR):
@@ -413,7 +449,9 @@ def cycle_start_text():
 
 def main():
     now_text = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    usage, _baseline = collect_per_ip(now_text)
+    usage, _baseline, hour443 = collect_per_ip(now_text)
+    ss_usage, hour40244 = collect_ss(now_text)
+    record_hourly(hour443, hour40244)
     iface_name, traffic, factor = vnstat_traffic()
     if traffic is None:
         print("[!] 读不到 vnstat 数据")
@@ -423,6 +461,12 @@ def main():
     today_gb = days[-1]["gb"] if days else 0.0
     cycle_gb = cycle["cycle_gb"]
     rows, total_rows = ip_rows(usage)
+    ss_total = sum(int(v.get("rx", 0)) + int(v.get("tx", 0)) for v in ss_usage.values())
+    ss_rows = [
+        {"ip": ip, "gb": round((int(v.get("rx", 0)) + int(v.get("tx", 0))) / 1e9, 2),
+         "last_seen": v.get("last_seen", "")}
+        for ip, v in sorted(ss_usage.items(), key=lambda kv: -(int(kv[1].get("rx", 0)) + int(kv[1].get("tx", 0))))[:5]
+    ]
 
     alerts = build_alerts(cycle_gb, today_gb)
     summary = {
@@ -443,6 +487,8 @@ def main():
         "days": days,
         "ips": rows,
         "ip_total": total_rows,
+        "ss_gb": round(ss_total / 1e9, 2),
+        "ss_ips": ss_rows,
         "alerts": alerts,
         "services": service_states(),
         "fail2ban": fail2ban_stats(),

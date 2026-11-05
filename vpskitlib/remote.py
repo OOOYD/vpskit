@@ -95,10 +95,20 @@ class Remote:
     def upload_bytes(self, data: bytes, remote_path: str, mode: int = 0o600) -> None:
         self.run("mkdir -p %s" % shlex.quote(os.path.dirname(remote_path)), timeout=30)
         cmd = self.ssh + ["cat > %s" % shlex.quote(remote_path)]
-        proc = subprocess.run(cmd, input=data, capture_output=True, timeout=120)
-        if proc.returncode != 0:
-            raise RemoteError("上传失败: %s" % remote_path)
-        self.run("chmod %o %s" % (mode, shlex.quote(remote_path)), timeout=20)
+        last = None
+        for attempt in range(3):
+            try:
+                proc = subprocess.run(cmd, input=data, capture_output=True, timeout=120)
+            except subprocess.TimeoutExpired as exc:
+                last = exc
+                time.sleep(1.0 * (attempt + 1))
+                continue
+            if proc.returncode == 0:
+                self.run("chmod %o %s" % (mode, shlex.quote(remote_path)), timeout=20)
+                return
+            last = proc
+            time.sleep(1.0 * (attempt + 1))
+        raise RemoteError("上传失败: %s (%s)" % (remote_path, redact_text(str(last))[:200]))
 
     def download_bytes(self, remote_path: str) -> bytes:
         cmd = self.ssh + ["cat %s" % shlex.quote(remote_path)]
@@ -110,9 +120,14 @@ class Remote:
     def scp_upload(self, local: Path, remote_path: str) -> None:
         self.run("mkdir -p %s" % shlex.quote(os.path.dirname(remote_path)), timeout=30)
         cmd = self.scp + [str(local), self.node.scp_target(remote_path)]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        if proc.returncode != 0:
-            raise RemoteError("scp 上传失败: %s\n%s" % (remote_path, redact_text(proc.stderr or "")))
+        last = None
+        for attempt in range(3):
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if proc.returncode == 0:
+                return
+            last = proc
+            time.sleep(1.0 * (attempt + 1))
+        raise RemoteError("scp 上传失败: %s\n%s" % (remote_path, redact_text((last.stderr if last else "") or "")))
 
     def scp_download(self, remote_path: str, local: Path) -> None:
         cmd = self.scp + [self.node.scp_target(remote_path), str(local)]
