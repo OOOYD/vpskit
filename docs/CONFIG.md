@@ -98,6 +98,11 @@ REALITY 私钥/公钥/shortId 在 `secrets.json` 的 `reality` 下，由工具�
 | `xray_version` | `26.7.28` | 写死版本；`latest` 不校验 checksum |
 | `xray_download_base` | GitHub | 可换成镜像 |
 | `traffic_snapshot_keep_days` | `14` | 每日快照/备份保留天数 |
+| `provider` | `""` | 商家/品牌，仅显示 |
+| `line` | `""` | 线路描述（163/CN2GIA/BGP…），仅显示 |
+| `purchased_on` | `""` | 开通日期 ISO；用于面板生命周期 |
+| `expires_on` | `""` | 到期日期 ISO；年付按开通日+1年 |
+| `billing_cycle` | `""` | `monthly` / `yearly`；仅显示与推算 |
 | `restic_repo` | `""` | 可选；配置后每日 restic 离岸备份 |
 | `restic_password_file` | `/root/.restic-pass` | restic 密码文件（600） |
 

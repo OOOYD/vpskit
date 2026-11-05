@@ -174,6 +174,11 @@ class NodeConfig:
     autoban_thresh_mb: int = 2
     autoban_strikes: int = 2
     traffic_snapshot_keep_days: int = 14
+    provider: str = ""
+    line: str = ""
+    purchased_on: str = ""
+    expires_on: str = ""
+    billing_cycle: str = ""
     restic_repo: str = ""
     restic_password_file: str = "/root/.restic-pass"
     raw: Dict[str, Any] = field(default_factory=dict)
@@ -424,6 +429,7 @@ def _node_from_dict(node_id: str, data: Dict[str, Any], defaults: Dict[str, Any]
         "selfheal_xray_rss_kb", "selfheal_min_interval_days", "autoban_enable",
         "autoban_thresh_mb", "autoban_strikes", "traffic_snapshot_keep_days",
         "restic_repo", "restic_password_file",
+        "provider", "line", "purchased_on", "expires_on", "billing_cycle",
     }
     for key in sorted(set(merged) - known):
         warnings.append("节点 %s 有未知配置项 %r（已忽略）" % (node_id, key))
@@ -481,6 +487,11 @@ def _node_from_dict(node_id: str, data: Dict[str, Any], defaults: Dict[str, Any]
         autoban_thresh_mb=int(merged.get("autoban_thresh_mb") or 2),
         autoban_strikes=int(merged.get("autoban_strikes") or 2),
         traffic_snapshot_keep_days=int(merged.get("traffic_snapshot_keep_days") or 14),
+        provider=str(merged.get("provider") or "").strip(),
+        line=str(merged.get("line") or "").strip(),
+        purchased_on=str(merged.get("purchased_on") or "").strip(),
+        expires_on=str(merged.get("expires_on") or "").strip(),
+        billing_cycle=str(merged.get("billing_cycle") or "").strip(),
         restic_repo=str(merged.get("restic_repo") or "").strip(),
         restic_password_file=str(merged.get("restic_password_file") or "/root/.restic-pass").strip(),
         raw=merged,

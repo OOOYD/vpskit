@@ -31,6 +31,11 @@ def collect_one(node: NodeConfig, root: Path, *, cache_seconds: int = 0, timeout
         data["node_id"] = node.id
         data["title"] = node.display_title
         data["host"] = node.host
+        data["provider"] = node.provider
+        data["line"] = node.line
+        data["purchased_on"] = node.purchased_on
+        data["expires_on"] = node.expires_on
+        data["billing_cycle"] = node.billing_cycle
         data["online"] = True
         data["error"] = ""
         try:

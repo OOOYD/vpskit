@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """节点状态 JSON：给 `vpskit status` 与面板用。只读，不含秘密。"""
+import datetime
+import glob
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
+import time
 
 SERVICES = [
     "xray",
@@ -136,6 +140,74 @@ def changes(limit=5):
     return result
 
 
+def net_info():
+    info = {"ipv4": [], "ipv6": [], "has_v4": False, "has_v6": False, "bbr": "", "qdisc": "", "tfo": "", "mtu_probing": "", "arch": platform.machine()}
+    try:
+        out = subprocess.run(["ip", "-brief", "addr"], capture_output=True, text=True, timeout=5).stdout
+        for line in out.splitlines():
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+            for addr in parts[2:]:
+                a = addr.split("/")[0]
+                if ":" in a and a != "::1" and not a.startswith("fe80:"):
+                    info["ipv6"].append(a)
+                elif "." in a and not a.startswith("127."):
+                    info["ipv4"].append(a)
+    except Exception:
+        pass
+    info["has_v4"] = bool(info["ipv4"])
+    info["has_v6"] = bool(info["ipv6"])
+    for key, path in (
+        ("bbr", "/proc/sys/net/ipv4/tcp_congestion_control"),
+        ("qdisc", "/proc/sys/net/core/default_qdisc"),
+        ("tfo", "/proc/sys/net/ipv4/tcp_fastopen"),
+        ("mtu_probing", "/proc/sys/net/ipv4/tcp_mtu_probing"),
+    ):
+        try:
+            info[key] = open(path, encoding="utf-8").read().strip()
+        except OSError:
+            pass
+    return info
+
+
+def provisioned_on():
+    dates = []
+    for path in ["/etc/hostname", "/var/log/installer", "/var/log/dpkg.log"]:
+        try:
+            dates.append(datetime.date.fromtimestamp(os.stat(path).st_mtime))
+        except OSError:
+            pass
+    for path in glob.glob("/var/log/dpkg.log*"):
+        try:
+            dates.append(datetime.date.fromtimestamp(os.stat(path).st_mtime))
+        except OSError:
+            pass
+    dates = [d for d in dates if d.year >= 2000]
+    return min(dates).isoformat() if dates else ""
+
+
+def cpu_info():
+    try:
+        def snap():
+            parts = open("/proc/stat", encoding="utf-8").readline().split()
+            vals = [int(x) for x in parts[1:]]
+            total = sum(vals)
+            idle = vals[3] + (vals[4] if len(vals) > 4 else 0)
+            return total, idle
+
+        t1, i1 = snap()
+        time.sleep(0.25)
+        t2, i2 = snap()
+        dt, di = t2 - t1, i2 - i1
+        return {
+            "percent": round((1 - di / dt) * 100, 1) if dt > 0 else 0.0,
+            "count": os.cpu_count() or 0,
+        }
+    except Exception:
+        return {"percent": 0.0, "count": os.cpu_count() or 0}
+
+
 def main():
     summary = load_json("/opt/traffic/summary.json")
     if isinstance(summary, dict):
@@ -160,6 +232,9 @@ def main():
         "mem": meminfo(),
         "disk": dict(zip(["total", "used", "free"], shutil.disk_usage("/"))),
         "load": list(os.getloadavg()),
+        "cpu": cpu_info(),
+        "network": net_info(),
+        "provisioned_on": provisioned_on(),
         "xray": out(["/usr/local/bin/xray", "version"]).splitlines()[:2],
     }
     try:

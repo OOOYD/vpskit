@@ -40,6 +40,15 @@ def _share_data(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "changes": [],
             "error": "",
             "host": "",
+            "provider": n.get("provider", ""),
+            "line": n.get("line", ""),
+            "purchased_on": n.get("purchased_on", ""),
+            "expires_on": n.get("expires_on", ""),
+            "billing_cycle": n.get("billing_cycle", ""),
+            "cpu": n.get("cpu", {}),
+            "network": n.get("network", {}),
+            "system": n.get("system", {}),
+            "unattr": n.get("unattr", {}),
         }
         t = n.get("traffic")
         if isinstance(t, dict):
@@ -49,6 +58,7 @@ def _share_data(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "today_gb": t.get("today_gb"),
                 "remaining_gb": t.get("remaining_gb"),
                 "days": (t.get("days") or [])[-7:],
+                "months": (t.get("months") or [])[-12:],
                 "alerts": t.get("alerts") or [],
                 "updated": t.get("updated"),
                 "down_gb": t.get("down_gb"),

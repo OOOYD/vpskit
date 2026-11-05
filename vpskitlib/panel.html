@@ -1,213 +1,270 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__TITLE__</title>
 <style>
-  :root{
-    --bg:#f5f5f7; --card:#fff; --card2:#e8e8ed; --text:#1d1d1f; --sub:#86868b;
-    --line:#e8e8ed; --blue:#007aff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a;
-    --shadow:0 1px 3px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.06);
+  :root{--bg:#f3f0e7;--panel:#fffdf8;--soft:#f0ece2;--line:#e1dbcd;--ink:#20241f;--mut:#6f7268;--dim:#9a9a8d;--green:#2f6b4f;--amber:#a8661d;--red:#a33a32;--blue:#3f6f88;--r:16px}
+  body[data-theme="cool"]{--bg:#f6f7f9;--panel:#fff;--soft:#f0f2f5;--line:#e2e5ea;--ink:#111827;--mut:#6b7280;--dim:#98a1ad;--green:#2563eb;--amber:#b45309;--red:#b91c1c;--blue:#2563eb}
+  body[data-theme="dark"]{--bg:#0d1218;--panel:#111923;--soft:#0b1219;--line:#20303d;--ink:#e6edf3;--mut:#8b9bab;--dim:#5e6e7d;--green:#4cc9f0;--amber:#d29922;--red:#f85149;--blue:#4cc9f0}
+  *{box-sizing:border-box}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC",sans-serif}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
+  .app{max-width:1440px;margin:0 auto;padding:14px 24px 18px;display:block;min-height:100vh;width:100%;min-width:0}
+  .side{display:none}
+  .brand{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:0}
+  .mark{width:24px;height:24px;border-radius:7px;background:var(--green);color:var(--panel);display:grid;place-items:center;font-size:12px;font-weight:800}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav a{color:var(--mut);text-decoration:none;font-size:12px;padding:7px 8px;border-radius:7px}
+  .nav a.on{background:var(--soft);color:var(--ink)}
+  .sidefoot{margin-top:28px;font-size:10px;color:var(--dim);line-height:1.7}
+  .sidefoot b{display:block;color:var(--mut);font-weight:500}
+  .main{flex:1;min-width:0;width:100%;max-width:100%}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:7px}
+  .sep{color:var(--dim);margin:0 2px}
+  .main{flex:1;min-width:0;width:100%;max-width:100%}
+  .crumb{font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:4px}
+  h1{font-size:25px;line-height:1.1;letter-spacing:-.02em;margin:0;font-weight:650}
+  .sub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--mut);font-size:10.5px;margin-top:7px;line-height:1.4}
+  .net{display:inline-flex;align-items:center;gap:4px;border:1px solid color-mix(in srgb,var(--green) 30%,transparent);background:color-mix(in srgb,var(--green) 8%,transparent);color:var(--green);font-size:8.5px;padding:2px 5px;border-radius:4px;margin-right:3px}
+  .net::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--green)}
+  .life{font-size:9.5px;color:var(--dim);margin-top:7px;line-height:1.45}
+  .life b{color:var(--mut);font-weight:500}
+  .days{color:var(--amber);background:color-mix(in srgb,var(--amber) 8%,transparent);border:1px solid color-mix(in srgb,var(--amber) 25%,transparent);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .netline{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim);line-height:1.5}
+  .nl{display:inline-flex;gap:5px}
+  .nl b{color:var(--mut);font-weight:500}
+  .topr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{font-size:9.5px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--mut);white-space:nowrap}
+  .pill.live{color:var(--green);border-color:color-mix(in srgb,var(--green) 30%,transparent);background:color-mix(in srgb,var(--green) 8%,transparent)}
+  .btn{height:25px;border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:6px;padding:0 7px;font:inherit;font-size:9.5px;cursor:pointer}
+  .btn.on{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 7%,transparent)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;height:24px}
+  .seg button{border:0;background:transparent;color:var(--mut);font:inherit;font-size:9px;padding:0 7px;cursor:pointer}
+  .seg button.on{background:var(--soft);color:var(--ink)}
+  .fleet{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 0;margin:7px 0 8px;flex-wrap:wrap}
+  .fleet-sum{font-size:10.5px;color:var(--mut)}
+  .fleet-sum b{color:var(--ink);font-weight:600}
+  .fnodes{display:flex;gap:5px;overflow-x:auto;max-width:70%}
+  .fnode{height:27px;border:1px solid var(--line);background:transparent;border-radius:7px;padding:0 8px;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:10px;color:var(--mut);white-space:nowrap;cursor:pointer}
+  .fnode.on{background:var(--panel);border-color:color-mix(in srgb,var(--ink) 25%,transparent);color:var(--ink)}
+  .fnode em{font-style:normal;color:var(--dim);font-size:9px}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block}
+  .grid2{min-width:0;display:grid;grid-template-columns:minmax(0,1.6fr) 286px;gap:9px;margin-bottom:9px}
+  .grid4{min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:9px}
+  .grid3{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr) 300px;gap:10px;margin-bottom:10px}
+  .card{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0;box-shadow:0 1px 2px rgba(20,24,18,.035)}
+  .ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px;font-size:10px;color:var(--mut);flex:0 0 auto}
+  .ch b{font-size:11.5px;color:var(--ink);font-weight:600}
+  .chart{width:100%;max-width:100%;height:190px;display:block}
+  .axis{stroke:var(--line);stroke-width:1}
+  .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+  .lbl{fill:var(--dim);font-size:9px}.val{fill:var(--mut);font-size:9px}
+  .line{fill:none;stroke:var(--green);stroke-width:2}.area{fill:color-mix(in srgb,var(--green) 8%,transparent)}
+  .dot2{fill:var(--panel);stroke:var(--green);stroke-width:2}.dotmax{fill:var(--amber);stroke:var(--panel);stroke-width:2}
+  .avg{stroke:var(--amber);stroke-dasharray:4 4;stroke-width:1}.avgt{fill:var(--amber);font-size:8.5px}
+  .bar{fill:color-mix(in srgb,var(--green) 35%,transparent)}.bar.on{fill:var(--green)}.bar.max{fill:var(--green)}.track{fill:color-mix(in srgb,var(--ink) 5%,transparent)}
+  .chartctl{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .chartnote{display:flex;justify-content:space-between;gap:10px;font-size:8.5px;color:var(--dim);margin-top:4px}
+  .chartnote b{color:var(--mut);font-weight:500}
+  .quota{display:flex;flex-direction:column}
+  .ring{position:relative;width:132px;height:132px;margin:0 auto 6px}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}.ringbg{fill:none;stroke:var(--line);stroke-width:8}.ringfg{fill:none;stroke:var(--green);stroke-width:8;stroke-linecap:round}
+  .ringc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .ringc strong{font-size:25px;line-height:1;font-weight:650;letter-spacing:-.03em}.ringc span{font-size:9.5px;color:var(--mut)}
+  .qfoot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px;font-size:9.5px;color:var(--mut)}
+  .qfoot b{color:var(--ink);font-weight:600}
+  .kpi{min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+  .kpi .k{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mut)}
+  .kpi .v{font-size:22px;font-weight:650;line-height:1;letter-spacing:-.02em;display:flex;align-items:baseline;gap:3px;margin-top:8px}
+  .kpi .v span{font-size:9px;color:var(--dim);font-weight:500}
+  .kpi .n{font-size:9px;color:var(--dim);margin-top:6px;line-height:1.45}
+  .proj{position:relative;height:4px;background:var(--line);border-radius:2px;margin-top:8px;overflow:hidden}.proj .now{position:absolute;inset:0 auto 0 0;background:var(--ink)}.proj .to{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--green) 35%,transparent)}
+  .flow{display:grid;grid-template-rows:repeat(3,1fr) auto;flex:1;min-height:0}
+  .fblock{display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .frow{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:9.5px;color:var(--mut)}.frow b{font-size:13px;color:var(--ink);font-weight:650}.frow b small{font-size:8px;color:var(--dim);font-weight:500;margin-left:2px}
+  .fbar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}.fbar i{display:block;height:100%;background:var(--green);border-radius:3px}.fbar i.warn{background:var(--amber)}
+  .ffoot{font-size:8px;color:var(--dim);border-top:1px solid var(--line);padding-top:6px;line-height:1.45}
+  .who{font-size:8px;color:var(--dim);margin-left:3px}
+  .svcgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(6,1fr);gap:0 18px;flex:1;min-height:0}
+  .svc{display:flex;align-items:center;justify-content:space-between;font-size:10px;min-height:0;border:0}
+  .svc .n{color:var(--mut)}.svc .s{color:var(--green);font-size:8.5px;display:flex;align-items:center;gap:4px}.svc .s::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--green)}.svc .s.bad{color:var(--red)}.svc .s.bad::before{background:var(--red)}
+  .sysbody{display:grid;grid-template-rows:repeat(6,1fr);flex:1;min-height:0}
+  .srow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:9.5px;color:var(--mut);min-height:0}
+  .srow b{font-size:10.5px;color:var(--ink);font-weight:600;text-align:right}.srow b small{font-size:8px;color:var(--dim);font-weight:400}
+  .sbar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:3px}.sbar i{display:block;height:100%;background:var(--green)}
+  .sinfo{font-size:8px;color:var(--dim);line-height:1.4;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bottom{min-width:0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr) 300px;gap:9px;height:208px;margin-bottom:8px}
+  .bottom>.card{display:flex;flex-direction:column;height:100%;padding:14px 16px}
+  .bottom>.card>.ch{height:20px;margin-bottom:8px}
+  .nodecard{display:flex;flex-direction:column;height:auto;padding:9px 14px;margin-bottom:6px}
+  .ftable{width:100%;border-collapse:collapse;font-size:9.5px}
+  .ftable th{text-align:left;font-size:8px;color:var(--dim);font-weight:500;letter-spacing:.04em;text-transform:uppercase;padding:0 0 5px;border-bottom:1px solid var(--line)}
+  .ftable td{padding:4px 0;color:var(--mut);vertical-align:middle}.ftable td:last-child,.ftable th:last-child{text-align:right}
+  .nd{display:flex;align-items:center;gap:5px;color:var(--ink);font-weight:500}
+  .addr{font-size:8px;color:var(--dim);line-height:1.35}.dates{font-size:9px;color:var(--mut);line-height:1.3}.dates2{font-size:8px;color:var(--dim);line-height:1.35}
+  .empty{padding:40px;text-align:center;color:var(--dim)}
+  .foot{display:flex;justify-content:space-between;gap:10px;color:var(--dim);font-size:8px;margin-top:4px}
+
+  @media (max-width:980px){
+    html,body{overflow-x:hidden}
+    .app{padding:12px 10px 20px;display:block;width:100%;max-width:100%;overflow-x:hidden}
+    .topbar,.head,.fleet,.grid2,.grid4,.bottom,.nodecard,.chartctl,.ch{min-width:0;max-width:100%}
+    #chart{width:100%;max-width:100%;overflow:hidden}
+    #chart svg{width:100%!important;height:auto;display:block}
+    .chartctl #chartRange{width:100%}
+    .topbar{flex-wrap:wrap;align-items:flex-start;gap:6px}
+    .topbar .topr{width:100%;justify-content:flex-start;gap:5px;flex-wrap:wrap}
+    .head{display:block;margin-bottom:5px}
+    .topr .pill{font-size:8px}
+    .topr .btn{font-size:8.5px;height:23px}
+    .topr .seg{height:22px}.topr .seg button{font-size:8px;padding:0 6px}
+    .grid2,.bottom{grid-template-columns:minmax(0,1fr);height:auto;width:100%;max-width:100%}
+    .grid4{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%;max-width:100%}
+    .grid2>*, .grid4>*, .bottom>*{min-width:0;width:100%;max-width:100%}
+    .card{width:100%;max-width:100%;overflow:hidden}
+    .ch{overflow:hidden}
+    .chartctl{max-width:100%;overflow:hidden}
+    .main,.app{width:100%;max-width:100%}
+    .kpi .n{overflow-wrap:anywhere}
+    .fleet{flex-direction:column;align-items:flex-start}
+    .fnodes{max-width:100%;width:100%;overflow-x:auto}
+    .ch{flex-wrap:wrap;gap:5px}
+    .chartctl{width:100%;justify-content:flex-start;gap:4px;flex-wrap:wrap}
+    .chartctl #chartRange{width:100%;font-size:8px;margin-bottom:2px}
+    .chart{height:200px}
+    .bottom>.card{height:auto;min-height:205px}
+    .nodecard{overflow-x:auto;max-width:100%}
+    .ftable{min-width:0;width:100%}
+    .ftable th:nth-child(2),.ftable td:nth-child(2){display:none}
+    .head h1{font-size:22px}
   }
-  @media (prefers-color-scheme: dark){
-    :root{--bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--text:#f5f5f7;--sub:#98989d;--line:#38383a;
-      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
+
+  @media (max-width:560px){
+    .grid4{grid-template-columns:1fr 1fr;gap:8px}.kpi{min-height:96px;padding:12px}
+    .kpi .v{font-size:19px}.grid2{gap:8px}.card{padding:12px;border-radius:14px}
+    .fleet-sum{font-size:9.5px}.fnode{font-size:9px}.topr .pill{font-size:8.5px}
+    .bottom>.card{min-height:190px}.svcgrid{gap:0 10px}.svc{font-size:9px}
+    .ftable th:nth-child(2),.ftable td:nth-child(2){display:none}
   }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Helvetica Neue",sans-serif;
-    background:var(--bg);color:var(--text);min-height:100vh;
-    padding:24px 16px 48px;display:flex;justify-content:center;
-  }
-  .wrap{width:100%;max-width:1080px}
-  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-  h1{font-size:26px;font-weight:700;letter-spacing:-.6px}
-  .sub{color:var(--sub);font-size:12px;margin-top:4px}
-  .pill{font-size:11px;font-weight:600;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
-  .card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid transparent}
-  .card.offline{opacity:.72}
-  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
-  .name{font-size:16px;font-weight:700;letter-spacing:-.2px}
-  .host{font-size:11px;color:var(--sub);margin-top:2px;word-break:break-all}
-  .badge{font-size:10px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap}
-  .badge.ok{background:rgba(48,209,88,.12);color:var(--green)}
-  .badge.bad{background:rgba(255,69,58,.12);color:var(--red)}
-  .big{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-  .num{font-size:28px;font-weight:700;letter-spacing:-1px}
-  .num small{font-size:13px;font-weight:500;color:var(--sub)}
-  .cap{font-size:11px;color:var(--sub);text-align:right;line-height:1.5}
-  .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;margin:10px 0 6px}
-  .fill{height:100%;border-radius:6px;background:var(--blue);transition:width .5s ease}
-  .meta{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:12px}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 12px}
-  .stat{background:var(--bg);border-radius:12px;padding:9px 6px;text-align:center}
-  .stat b{display:block;font-size:13px;font-weight:700}
-  .stat span{font-size:9px;color:var(--sub)}
-  .bars{display:flex;align-items:flex-end;gap:5px;height:54px;margin:6px 0 10px}
-  .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
-  .col .b{width:70%;max-width:22px;background:var(--card2);border-radius:5px 5px 2px 2px;min-height:2px}
-  .col.today .b{background:linear-gradient(180deg,#64d2ff,var(--blue))}
-  .col .d{font-size:8px;color:var(--sub);white-space:nowrap}
-  .svc{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
-  .chip{font-size:10px;padding:4px 7px;border-radius:8px;background:var(--bg);color:var(--sub)}
-  .chip.ok{color:var(--green)}
-  .chip.bad{color:var(--red);font-weight:700}
-  .alert{font-size:11px;padding:7px 10px;border-radius:10px;margin-top:6px}
-  .alert.ok{background:rgba(48,209,88,.1);color:var(--green)}
-  .alert.warn{background:rgba(255,159,10,.12);color:var(--orange)}
-  .alert.danger{background:rgba(255,69,58,.12);color:var(--red)}
-  .change{font-size:10px;color:var(--sub);margin-top:8px;line-height:1.5}
-  .change b{color:var(--text);font-weight:600}
-  .empty{text-align:center;color:var(--sub);font-size:12px;padding:40px}
-  .foot{text-align:center;color:var(--sub);font-size:11px;margin-top:18px}
-  .err{font-size:10px;color:var(--red);margin-top:8px;word-break:break-all}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div>
-      <h1>__TITLE__</h1>
-      <div class="sub" id="summary">加载中 …</div>
+<div class="app">
+  <main class="main">
+    <div class="topbar">
+      <div class="brand"><span class="mark">V</span>vpskit <span class="sep">/</span><span class="crumb" style="margin:0">Fleet / Nodes</span></div>
+      <div class="topr"><span class="pill live" id="online">● 在线</span><span class="pill" id="updated">—</span>
+        <span class="seg" aria-label="主题"><button data-theme="paper" class="on">纸感</button><button data-theme="cool">冷白</button><button data-theme="dark">暗黑</button></span>
+        <button class="btn" id="refresh">刷新</button></div>
     </div>
-    <div class="pill" id="updated">—</div>
-  </div>
-  <div class="grid" id="grid"></div>
-  <div class="foot" id="foot">只读面板 · 自动刷新</div>
+    <header class="head">
+      <div><h1 id="title">—</h1><div class="sub" id="sub"></div><div class="life" id="life"></div><div class="netline" id="netline"></div></div>
+    </header>
+    <div class="fleet"><div class="fleet-sum" id="fleetSum">—</div><div class="fnodes" id="fnodes"></div></div>
+    <section class="grid2">
+      <div class="card"><div class="ch"><b id="chartTitle">最近 7 天</b><div class="chartctl"><span id="chartRange">—</span><span class="seg" aria-label="统计周期"><button data-period="day" class="on">按日</button><button data-period="month">按月</button></span><span class="seg" aria-label="图表类型"><button data-type="line" class="on">折线</button><button data-type="bar">柱状</button></span></div></div><div id="chart"></div><div class="chartnote" id="chartnote"></div></div>
+      <div class="card quota"><div class="ch"><b>本周期额度</b><span id="cycleRange">—</span></div>
+        <div class="ring"><svg viewBox="0 0 150 150" aria-hidden="true"><circle class="ringbg" cx="75" cy="75" r="64"/><circle class="ringfg" id="ring" cx="75" cy="75" r="64"/></svg><div class="ringc"><strong class="num" id="cycleGb">—</strong><span id="cycleOf">of 500 GB</span></div></div>
+        <div class="qfoot"><span>剩余 <b class="num" id="remainGb">—</b> GB</span><span>已用 <b class="num" id="pct">—</b>%</span></div></div>
+    </section>
+    <section class="grid4">
+      <div class="card kpi"><div class="k"><span>今日用量</span><span id="todayDate">—</span></div><div class="v num" id="todayGb">—<span>GB</span></div><div class="n" id="todayNote">—</div></div>
+      <div class="card kpi"><div class="k"><span>周期日均</span><span>7 天</span></div><div class="v num" id="avgGb">—<span>GB</span></div><div class="n" id="avgNote">—</div></div>
+      <div class="card kpi"><div class="k"><span>预计周期末</span><span id="projPct">—</span></div><div class="v num" id="projGb">—<span>GB</span></div><div class="proj"><i class="now" id="projNow"></i><i class="to" id="projTo"></i></div><div class="n" id="projNote">—</div></div>
+      <div class="card kpi"><div class="k"><span>流量健康</span><span id="healthFlag">—</span></div><div class="flow" id="flow"></div></div>
+    </section>
+    <section class="bottom">
+      <div class="card"><div class="ch"><b>服务</b><span id="svcCount">—</span></div><div class="svcgrid" id="services"></div></div>
+      <div class="card"><div class="ch"><b>系统</b><span>实时</span></div><div class="sysbody" id="system"></div></div>
+      <div class="card"><div class="ch"><b>节点</b><span>生命周期</span></div><div class="sysbody" id="lifecycle"></div></div>
+    </section>
+    <section class="card nodecard"><div class="ch"><b>节点组</b><span id="fleetNote">—</span></div><table class="ftable"><thead><tr><th>节点</th><th>地址</th><th>购买 / 到期</th><th>今日</th><th>周期 / 额度</th><th>状态</th><th>告警</th></tr></thead><tbody id="fleetTable"></tbody></table></section>
+    <div class="foot"><span>只读面板 · 数据来自 vpskit</span><span id="footUpdated">—</span></div>
+  </main>
 </div>
 <script>
-const DATA = __DATA__;
+const INITIAL = __DATA__;
 const SHARE = __SHARE__;
 const API = __API__;
 const REFRESH = __REFRESH__;
-let state = DATA;
-
-function esc(v){
-  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });
+let state = Array.isArray(INITIAL) ? INITIAL : [];
+let selected = null, period = 'day', type = 'line';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (v,d=2) => { const n=Number(v); return Number.isFinite(n)?n.toLocaleString('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d}):'—'; };
+const gb = (v) => { const n=Number(v); return Number.isFinite(n)?n.toFixed(2):'—'; };
+function current(){ if(!state.length) return null; if(!selected || !state.some(n=>n.node_id===selected)) selected=state[0].node_id; return state.find(n=>n.node_id===selected)||state[0]; }
+function dateOnly(s){ return s ? String(s).slice(0,10) : '—'; }
+function daysLeft(s){ if(!s) return null; const d=new Date(String(s)+'T00:00:00'); if(isNaN(d)) return null; return Math.ceil((d-Date.now())/86400000); }
+function fmt(n){ return n==null?'—':String(n); }
+function setTheme(t){ document.body.dataset.theme=t; document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('on',b.dataset.theme===t)); try{localStorage.setItem('vpskit-theme',t)}catch(e){} }
+(function(){ let t='paper'; try{t=localStorage.getItem('vpskit-theme')||'paper'}catch(e){} setTheme(t); })();
+function svgChart(n){
+  const t=n.traffic||{}; let rows=[], labels=[], max=1, title='最近 7 天', range='';
+  if(period==='month' && (t.months||[]).length){ rows=t.months.slice(-8).map(x=>({label:x.label.slice(5)+' 月',gb:Number(x.gb)||0})); title='最近 8 个月'; range='自然月 · GB'; }
+  else { rows=(t.days||[]).slice(-7).map(x=>({label:x.label,gb:Number(x.gb)||0,today:x.label==='今天'||false})); title='最近 7 天'; range='10/29 – 11/04 · GB / 日'; }
+  max=Math.max(...rows.map(x=>x.gb),1)*1.08;
+  const W=800,H=218,m={l:42,r:16,t:20,b:30},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  if(type==='bar'){
+    const bw=Math.min(56,iw/rows.length*0.55), step=iw/rows.length;
+    let s='<svg class="chart" viewBox="0 0 800 218" role="img" aria-label="流量柱状图">';
+    [0,.5,1].forEach(f=>{const y=m.t+ih*(1-f);s+=`<line class="grid" x1="${m.l}" y1="${y}" x2="${W-m.r}" y2="${y}"/><text class="lbl" x="0" y="${y+3}">${Math.round(max*f)}G</text>`});
+    rows.forEach((r,i)=>{const h=ih*r.gb/max, x=m.l+step*i+(step-bw)/2, y=m.t+ih-h; s+=`<rect class="track" x="${x}" y="${m.t}" width="${bw}" height="${ih}" rx="7"/><rect class="bar ${r.today?'on':''}" x="${x}" y="${y}" width="${bw}" height="${Math.max(h,2)}" rx="7"/><text class="val" x="${x+bw/2}" y="${y-6}" text-anchor="middle">${gb(r.gb)}</text><text class="lbl" x="${x+bw/2}" y="${H-8}" text-anchor="middle">${esc(r.label)}</text>`});
+    return {svg:s+'</svg>',title,range};
+  }
+  const step=iw/Math.max(rows.length-1,1), pts=rows.map((r,i)=>[m.l+step*i,m.t+ih-ih*r.gb/max]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const area=line+` L${pts[pts.length-1][0]},${m.t+ih} L${pts[0][0]},${m.t+ih} Z`;
+  let s='<svg class="chart" viewBox="0 0 800 218" role="img" aria-label="流量折线图">';
+  [0,.5,1].forEach(f=>{const y=m.t+ih*(1-f);s+=`<line class="grid" x1="${m.l}" y1="${y}" x2="${W-m.r}" y2="${y}"/><text class="lbl" x="0" y="${y+3}">${Math.round(max*f)}G</text>`});
+  s+=`<path class="area" d="${area}"/><path class="line" d="${line}"/>`;
+  pts.forEach((p,i)=>{s+=`<circle class="dot2" cx="${p[0]}" cy="${p[1]}" r="3.5"/><text class="val" x="${p[0]}" y="${p[1]-7}" text-anchor="middle">${gb(rows[i].gb)}</text><text class="lbl" x="${p[0]}" y="${H-8}" text-anchor="middle">${esc(rows[i].label)}</text>`});
+  return {svg:s+'</svg>',title,range};
 }
-function num(v, d){ v = Number(v); return isFinite(v) ? v : (d || 0); }
-function gb(v){ v = num(v); return v >= 100 ? v.toFixed(1) : (v >= 1 ? v.toFixed(2) : (v*1024).toFixed(0)); }
-function unit(v){ v = num(v); return v >= 1 ? 'GB' : 'MB'; }
-function pct(cycle, cap){ cap = num(cap); return cap > 0 ? Math.min(100, num(cycle)/cap*100) : 0; }
-function color(p){ return p < 60 ? 'var(--green)' : (p < 85 ? 'var(--orange)' : 'var(--red)'); }
-function uptime(s){
-  s = num(s); if (!s) return '—';
-  var d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
-  return d > 0 ? (d + '天' + h + '时') : (h > 0 ? (h + '时' + m + '分') : (m + '分'));
-}
-function svcCount(n){
-  var s = n.services || {}, total = 0, ok = 0, bad = [];
-  Object.keys(s).forEach(function(k){
-    if (k.endsWith('.timer')) return;
-    total++; if ((s[k]||{}).active === 'active') ok++; else bad.push(k);
-  });
-  return {total: total, ok: ok, bad: bad};
-}
-
 function render(){
-  var nodes = state || [];
-  var online = nodes.filter(function(n){ return n.online; }).length;
-  var total = nodes.length;
-  var used = 0, cap = 0, alerts = 0;
-  nodes.forEach(function(n){
-    var t = n.traffic || {};
-    used += num(t.cycle_gb); cap += num(t.cap_gb);
-    alerts += (t.alerts || []).length;
-  });
-  document.getElementById('summary').textContent =
-    online + '/' + total + ' 在线 · 已用 ' + used.toFixed(1) + ' / ' + cap.toFixed(0) + ' GB' +
-    (alerts ? (' · ' + alerts + ' 条告警') : '');
-  document.getElementById('updated').textContent = '更新 ' + new Date().toLocaleTimeString();
-
-  var grid = document.getElementById('grid');
-  if (!nodes.length){ grid.innerHTML = '<div class="card empty">还没有节点</div>'; return; }
-  var html = '';
-  nodes.forEach(function(n){
-    var t = n.traffic || {};
-    var capg = num(t.cap_gb), cyc = num(t.cycle_gb), today = num(t.today_gb), remain = num(t.remaining_gb);
-    var p = pct(cyc, capg);
-    var sc = svcCount(n);
-    var cls = n.online ? '' : ' offline';
-    var badge = n.online ? '<span class="badge ok">在线</span>' : '<span class="badge bad">离线</span>';
-    var host = SHARE ? '' : (n.host || '');
-    html += '<div class="card' + cls + '">';
-    html += '<div class="head"><div><div class="name">' + esc(n.title || n.node_id) + '</div>' +
-            (host ? '<div class="host">' + esc(host) + '</div>' : '') +
-            '</div>' + badge + '</div>';
-    if (!n.online){
-      html += '<div class="err">' + esc(n.error || 'unreachable') + '</div></div>';
-      return;
-    }
-    html += '<div class="big"><div class="num">' + gb(cyc) + '<small> ' + unit(cyc) + '</small></div>' +
-            '<div class="cap">周期额度<br><b>' + capg.toFixed(0) + ' GB</b></div></div>';
-    html += '<div class="bar"><div class="fill" style="width:' + p.toFixed(1) + '%;background:' + color(p) + '"></div></div>';
-    html += '<div class="meta"><span>已用 ' + p.toFixed(1) + '%</span><span>剩余 ' + gb(remain) + ' ' + unit(remain) + '</span></div>';
-    html += '<div class="stats">' +
-      '<div class="stat"><b>' + gb(today) + '</b><span>今日 ' + unit(today) + '</span></div>' +
-      '<div class="stat"><b>' + gb(t.down_gb) + '</b><span>下载</span></div>' +
-      '<div class="stat"><b>' + gb(t.up_gb) + '</b><span>上传</span></div>' +
-      '<div class="stat"><b>' + uptime(n.uptime_seconds) + '</b><span>uptime</span></div>' +
-      '</div>';
-    var days = t.days || [];
-    if (days.length){
-      var max = Math.max.apply(null, days.map(function(d){ return num(d.gb); }).concat([0.01]));
-      html += '<div class="bars">';
-      days.forEach(function(d, i){
-        var h = Math.max(2, Math.round(num(d.gb)/max*44));
-        html += '<div class="col' + (i === days.length-1 ? ' today' : '') + '">' +
-                '<div class="b" style="height:' + h + 'px"></div>' +
-                '<div class="d">' + esc(d.label) + '</div></div>';
-      });
-      html += '</div>';
-    }
-    html += '<div class="svc">';
-    html += '<span class="chip ' + (sc.bad.length ? 'bad' : 'ok') + '">服务 ' + sc.ok + '/' + sc.total + '</span>';
-    if (!SHARE){
-      sc.bad.forEach(function(b){ html += '<span class="chip bad">' + esc(b) + '</span>'; });
-      if (n.xray && n.xray.length) html += '<span class="chip">' + esc(n.xray[0]) + '</span>';
-    }
-    html += '</div>';
-    var al = t.alerts || [];
-    if (al.length){
-      al.slice(0, 3).forEach(function(a){
-        var sev = a.sev === 2 ? 'danger' : 'warn';
-        html += '<div class="alert ' + sev + '">● ' + esc(a.txt) + '</div>';
-      });
-    } else {
-      html += '<div class="alert ok">● 无告警</div>';
-    }
-    if (n.unattr && n.unattr.ch443) {
-      var ua = n.unattr;
-      html += '<div class="change"><b>REALITY 未归属</b> ' + esc(Number(ua.ch443.total_gb || 0).toFixed(2)) + ' GB / 7d · 日均 ' + esc(Number(ua.ch443.daily_avg_gb || 0).toFixed(2)) + ' GB' +
-              (Number(ua.ch443.daily_avg_gb || 0) > Number(ua.threshold_gb || 1.5) ? ' · 偏高' : '') +
-              ' · SS ' + esc(Number((ua.ch40244 || {}).total_gb || 0).toFixed(2)) + ' GB</div>';
-    }
-    if (!SHARE && n.changes && n.changes.length){
-      var c = n.changes[n.changes.length-1];
-      html += '<div class="change"><b>' + esc(c.title || '') + '</b> · ' + esc(c.time || '') + '</div>';
-    }
-    html += '</div>';
-  });
-  grid.innerHTML = html;
+  const n=current(); if(!n){ $('title').textContent='暂无节点'; return; }
+  const t=n.traffic||{}, u=n.unattr||{}, net=n.network||{}, cpu=n.cpu||{}, sys=n.system||{}, mem=n.mem||{}, disk=n.disk||{};
+  $('title').textContent=n.title||n.node_id; $('online').textContent=n.online?'● 在线':'● 离线'; $('online').style.color=n.online?'var(--green)':'var(--red)';
+  $('updated').textContent='更新 '+(t.updated||'—'); $('sub').innerHTML=`${net.has_v4?'<span class="net">IPv4</span>':''}${net.has_v6?'<span class="net">IPv6</span>':''} ${esc(n.kernel||'Linux')} · REALITY`; 
+  const dl=daysLeft(n.expires_on); $('life').innerHTML=`购买 <b>${esc(dateOnly(n.purchased_on))}</b> · 到期 <b>${esc(dateOnly(n.expires_on))}</b>${dl!=null?`<span class="days">${dl>0?'剩 '+dl+' 天':'已到期'}</span>`:''}`;
+  $('netline').innerHTML=`<span class="nl">线路 <b>${esc(n.line||'未标注')}</b></span><span class="nl">优化 <b>${net.bbr?'BBR':''} ${net.qdisc?('· '+net.qdisc):''} ${net.tfo?('· TFO '+net.tfo):''} ${net.mtu_probing==='1'?'· MTU probing':''}</b></span>`;
+  const fs=state.filter(x=>x.online).length, sumCycle=state.reduce((a,x)=>a+Number((x.traffic||{}).cycle_gb||0),0), sumCap=state.reduce((a,x)=>a+Number((x.traffic||{}).cap_gb||0),0);
+  $('fleetSum').innerHTML=`<b>${state.length}</b> 个节点 · <b>${fs}</b> 在线 · 周期合计 <b>${gb(sumCycle)} / ${Math.round(sumCap)} GB</b>`;
+  $('fnodes').innerHTML=state.map(x=>`<button class="fnode ${x.node_id===selected?'on':''}" data-node="${esc(x.node_id)}"><span class="dot" style="background:${x.online?'var(--green)':'var(--red)'}"></span>${esc(x.title||x.node_id)} <em>${esc(x.node_id)} · ${gb((x.traffic||{}).cycle_gb)} GB</em></button>`).join('');
+  document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{selected=b.dataset.node;render()});
+  const c=Number(t.cycle_gb)||0, cap=Number(t.cap_gb)||500, pct=cap?c/cap*100:0;
+  $('cycleGb').textContent=gb(c); $('cycleOf').textContent=`of ${Math.round(cap)} GB`; $('remainGb').textContent=gb(Math.max(cap-c,0)); $('pct').textContent=pct.toFixed(1); $('cycleRange').textContent=(t.cycle_start||'—')+' 起';
+  const circ=2*Math.PI*64; $('ring').setAttribute('stroke-dasharray',`${(circ*Math.min(pct,100)/100).toFixed(1)} ${circ.toFixed(1)}`); $('ring').style.stroke=pct>=85?'var(--red)':pct>=60?'var(--amber)':'var(--green)';
+  $('todayGb').innerHTML=`${gb(t.today_gb)}<span>GB</span>`; $('todayDate').textContent=dateOnly(t.updated); $('todayNote').textContent=`↓ ${gb(t.down_gb)} · ↑ ${gb(t.up_gb)} GB`;
+  $('avgGb').innerHTML=`${gb(t.avg_gb)}<span>GB</span>`; $('avgNote').textContent=`7 天合计 ${gb((t.days||[]).reduce((a,x)=>a+Number(x.gb||0),0))} GB · 按 ${esc(t.cycle_start||'周期')} 起算`;
+  $('projGb').innerHTML=`${gb(t.projected_gb)}<span>GB</span>`; $('projPct').textContent=`${Math.round((Number(t.projected_gb)||0)/cap*100)}% 额度`; $('projNote').textContent=`按日均 ${gb(t.avg_gb)} GB 估算 · 额度 ${Math.round(cap)} GB`;
+  $('projNow').style.width=`${Math.min(pct,100)}%`; $('projTo').style.left=`${Math.min(pct,100)}%`; $('projTo').style.width=`${Math.max(0,Math.min(100-pct,(Number(t.projected_gb)||0)/cap*100-pct))}%`;
+  const ch=u.ch443||{}, ss=u.ch40244||{}, ua=Number(ch.daily_avg_gb)||0, total=Number(ch.total_gb||0)+Number(ss.total_gb||0);
+  $('healthFlag').textContent=ch.level==='high'?'1 提示':'正常';
+  $('flow').innerHTML=`<div class="fblock"><div class="frow"><span>已认证设备 <span class="who">自己</span></span><b>${gb(ch.known_gb)} <small>GB</small></b></div><div class="fbar"><i style="width:${total?Math.min(100,Number(ch.known_gb||0)/total*100):0}%"></i></div></div><div class="fblock"><div class="frow"><span>SS 通道 <span class="who">自己</span></span><b>${gb(ss.total_gb)} <small>GB</small></b></div><div class="fbar"><i style="width:${total?Math.min(100,Number(ss.total_gb||0)/total*100):0}%"></i></div></div><div class="fblock"><div class="frow"><span>未归属 <span class="who">其他/扫描器</span></span><b>${gb(ch.total_gb)} <small>GB</small></b></div><div class="fbar"><i class="warn" style="width:${total?Math.min(100,Number(ch.total_gb||0)/total*100):0}%"></i></div></div><div class="ffoot">合计 ${gb(total)} GB · 近 7 天窗口<br>未归属是估算，不按 IP 猜“谁是谁”</div>`;
+  const chart=svgChart(n); $('chart').innerHTML=chart.svg; $('chartTitle').textContent=chart.title; $('chartRange').textContent=chart.range; $('chartnote').innerHTML=`<span><b>${period==='month'?'最高月':'7 天合计'}</b> ${period==='month'?gb(Math.max(...(t.months||[]).map(x=>x.gb),0))+' GB':gb((t.days||[]).reduce((a,x)=>a+Number(x.gb||0),0))+' GB'}</span><span>${period==='month'?'自然月口径，与账单周期不同':'当日 '+gb(t.today_gb)+' GB'}</span>`;
+  const svcAll=n.services||{};
+  const svc=Object.fromEntries(Object.entries(svcAll).filter(([k])=>!(svcAll[k+'.timer'] && svcAll[k+'.timer'].active==='active')));
+  $('svcCount').textContent=`${Object.values(svc).filter(x=>x.active==='active').length} / ${Object.keys(svc).length} active`;
+  $('services').innerHTML=Object.entries(svc).map(([k,v])=>`<div class="svc"><span class="n">${esc(k)}</span><span class="s ${v.active==='active'?'':'bad'}">${esc(v.active||'unknown')}</span></div>`).join('');
+  const memTotal=Number(mem.total_mb)||0, memAvail=Number(mem.available_mb)||0, memPct=memTotal?(memTotal-memAvail)/memTotal*100:0;
+  const diskTotal=Number(disk.total)||0, diskFree=Number(disk.free)||0, diskPct=diskTotal?(diskTotal-diskFree)/diskTotal*100:0;
+  $('system').innerHTML=`<div class="srow"><span>CPU</span><b class="num">${Number(cpu.percent||0).toFixed(1)}<small>% · ${cpu.count||'?'} vCPU</small></b></div><div class="srow"><span>内存</span><b class="num">${Math.round(memAvail)}<small>MB / ${Math.round(memTotal)}</small></b></div><div class="srow"><span>磁盘</span><b class="num">${gb(diskFree/1e9)}<small>GB / ${gb(diskTotal/1e9)}</small></b></div><div class="sinfo">内核 ${esc(n.kernel||'—')}</div><div class="sinfo">Debian 13 · uptime ${(Number(n.uptime_seconds||0)/3600).toFixed(1)} h</div><div class="sinfo">load ${(n.load||[]).map(x=>Number(x).toFixed(2)).join(' / ')||'—'}</div>`;
+  $('lifecycle').innerHTML=`<div class="srow"><span>购买</span><b>${esc(dateOnly(n.purchased_on))}</b></div><div class="srow"><span>到期</span><b>${esc(dateOnly(n.expires_on))}</b></div><div class="srow"><span>周期</span><b>${esc(n.billing_cycle||'—')}</b></div><div class="sinfo">${esc(n.provider||'—')}</div><div class="sinfo">${esc(n.line||'线路未标注')}</div><div class="sinfo">${net.has_v4?'IPv4':'无 IPv4'} · ${net.has_v6?'IPv6':'无 IPv6'}</div>`;
+  $('fleetNote').textContent=`${state.length} 个节点 · 添加后自动汇总`;
+  $('fleetTable').innerHTML=state.map(x=>{const xt=x.traffic||{}, xu=x.unattr||{};return `<tr><td><span class="nd"><span class="dot" style="background:${x.online?'var(--green)':'var(--red)'}"></span>${esc(x.title||x.node_id)} <span style="color:var(--dim);font-weight:400">${esc(x.node_id)}</span></span></td><td><div class="addr">${esc((x.network||{}).ipv4?.[0]||x.host||'—')}</div><div class="addr">${esc((x.network||{}).ipv6?.[0]||'')}</div></td><td><div class="dates">${esc(dateOnly(x.purchased_on))}</div><div class="dates2">${esc(dateOnly(x.expires_on))}</div></td><td class="num">${gb(xt.today_gb)} <small>GB</small></td><td class="num">${gb(xt.cycle_gb)} <small>/ ${Math.round(Number(xt.cap_gb)||500)} GB</small></td><td style="color:${x.online?'var(--green)':'var(--red)'}">${x.online?'在线':'离线'}</td><td class="num">${xt.alerts?xt.alerts.length:0}</td></tr>`}).join('');
+  $('footUpdated').textContent='更新于 '+(t.updated||'—');
 }
-
-async function refresh(){
-  try {
-    var r = await fetch(API, {cache:'no-store'});
-    if (!r.ok) return;
-    state = await r.json();
-    render();
-  } catch (e) {}
-}
-
-render();
-setInterval(refresh, Math.max(5, REFRESH) * 1000);
+async function refresh(){ try{ const r=await fetch(API,{cache:'no-store'}); if(r.ok){ const d=await r.json(); if(Array.isArray(d)){state=d; render();} } }catch(e){} }
+document.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>setTheme(b.dataset.theme));
+document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{period=b.dataset.period;document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('on',x===b));render()});
+document.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{type=b.dataset.type;document.querySelectorAll('[data-type]').forEach(x=>x.classList.toggle('on',x===b));render()});
+$('refresh').onclick=refresh;
+render(); setInterval(refresh, Math.max(5, Number(REFRESH)||30)*1000);
 </script>
 </body>
 </html>

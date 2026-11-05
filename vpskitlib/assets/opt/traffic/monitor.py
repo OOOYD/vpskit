@@ -175,6 +175,19 @@ def cycle_stats(traffic, factor):
     }
 
 
+def month_series(traffic, factor):
+    out = []
+    for item in (traffic.get("month") or [])[-12:]:
+        d = item.get("date") or {}
+        val = (item.get("rx", 0) + item.get("tx", 0)) * factor
+        gb = gb_from_bytes(val)
+        out.append({
+            "label": "%s-%02d" % (d.get("year", "?"), d.get("month", 0)),
+            "gb": round(gb, 3),
+        })
+    return out
+
+
 def day_series(traffic, factor):
     out = []
     for item in (traffic.get("day") or [])[-7:]:
@@ -367,6 +380,20 @@ def system_info():
                 break
     except OSError:
         pass
+    try:
+        def snap():
+            parts = open("/proc/stat", encoding="utf-8").readline().split()
+            vals = [int(x) for x in parts[1:]]
+            return sum(vals), vals[3] + (vals[4] if len(vals) > 4 else 0)
+        t1, i1 = snap()
+        time.sleep(0.2)
+        t2, i2 = snap()
+        dt, di = t2 - t1, i2 - i1
+        info["cpu_percent"] = round((1 - di / dt) * 100, 1) if dt > 0 else 0.0
+        info["cpu_count"] = os.cpu_count() or 0
+    except Exception:
+        info["cpu_percent"] = 0.0
+        info["cpu_count"] = os.cpu_count() or 0
     return info
 
 
@@ -517,6 +544,7 @@ def main():
         return 1
     cycle = cycle_stats(traffic, factor)
     days = day_series(traffic, factor)
+    months = month_series(traffic, factor)
     today_gb = days[-1]["gb"] if days else 0.0
     cycle_gb = cycle["cycle_gb"]
     rows, total_rows = ip_rows(usage)
@@ -547,6 +575,7 @@ def main():
         "cycle_start": cycle["cycle_start"],
         "cycle_end": cycle["cycle_end"],
         "days": days,
+        "months": months,
         "ips": rows,
         "ip_total": total_rows,
         "ss_gb": round(ss_total / 1e9, 2),
