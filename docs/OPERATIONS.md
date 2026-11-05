@@ -4,18 +4,18 @@
 
 ```bash
 ./vpskit status                 # 多节点概览
-./vpskit verify tokyo           # 单节点深检
+./vpskit verify node1           # 单节点深检
 ./vpskit panel                  # 本地面板
 ```
 
 节点上：
 
 ```bash
-ssh tokyo vpskit-status --json  # 面板/脚本用的 JSON
-ssh tokyo ops status            # 人看的概览
-ssh tokyo ops changelog -n 20   # 变更台账
-ssh tokyo ops changelog --json  # JSONL
-ssh tokyo systemctl status xray traffic-web sub fail2ban --no-pager
+ssh node1 vpskit-status --json  # 面板/脚本用的 JSON
+ssh node1 ops status            # 人看的概览
+ssh node1 ops changelog -n 20   # 变更台账
+ssh node1 ops changelog --json  # JSONL
+ssh node1 systemctl status xray traffic-web sub fail2ban --no-pager
 ```
 
 ## 加一台新 VPS
@@ -30,10 +30,10 @@ ssh tokyo systemctl status xray traffic-web sub fail2ban --no-pager
 ## 轮换秘密
 
 ```bash
-./vpskit rotate tokyo --all --yes        # 全部
-./vpskit rotate tokyo --uuid --client friend --yes
-./vpskit rotate tokyo --traffic --yes    # 只换流量页 key
-./vpskit plan tokyo && ./vpskit apply tokyo --yes
+./vpskit rotate node1 --all --yes        # 全部
+./vpskit rotate node1 --uuid --client friend --yes
+./vpskit rotate node1 --traffic --yes    # 只换流量页 key
+./vpskit plan node1 && ./vpskit apply node1 --yes
 ```
 
 影响：
@@ -49,8 +49,8 @@ ssh tokyo systemctl status xray traffic-web sub fail2ban --no-pager
 ## 回滚
 
 ```bash
-./vpskit rollback tokyo                  # 用 state.json 里的最近备份
-./vpskit rollback tokyo --backup 20261103-225541
+./vpskit rollback node1                  # 用 state.json 里的最近备份
+./vpskit rollback node1 --backup 20261103-225541
 ```
 
 远端备份在 `/root/.vpskit/backups/<ts>/`，包含：

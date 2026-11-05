@@ -31,7 +31,7 @@
 
 ```bash
 # 计划（机器读）
-vpskit plan tokyo --json > /tmp/plan.json
+vpskit plan node1 --json > /tmp/plan.json
 python3 - <<'PY'
 import json
 p=json.load(open('/tmp/plan.json'))
@@ -43,7 +43,7 @@ PY
 vpskit status --json | jq '.nodes[] | {node_id, online, cycle: .traffic.cycle_gb, today: .traffic.today_gb}'
 
 # 验证
-vpskit verify tokyo --json | jq '{ok, fails: [.checks[] | select(.ok|not) | .name]}'
+vpskit verify node1 --json | jq '{ok, fails: [.checks[] | select(.ok|not) | .name]}'
 ```
 
 ## JSON 形状（稳定字段）
@@ -52,7 +52,7 @@ vpskit verify tokyo --json | jq '{ok, fails: [.checks[] | select(.ok|not) | .nam
 
 ```json
 {
-  "node": "tokyo",
+  "node": "node1",
   "ok": true,
   "has_v6": true,
   "addresses": {"ipv4": "...", "ipv6": "..."},
@@ -68,13 +68,13 @@ vpskit verify tokyo --json | jq '{ok, fails: [.checks[] | select(.ok|not) | .nam
 `verify --json`：
 
 ```json
-{"node": "tokyo", "ok": true, "checks": [{"name": "service:xray", "ok": true, "detail": "active=active enabled=enabled", "critical": true}], "warnings": []}
+{"node": "node1", "ok": true, "checks": [{"name": "service:xray", "ok": true, "detail": "active=active enabled=enabled", "critical": true}], "warnings": []}
 ```
 
 `status --json`：
 
 ```json
-{"time": "...", "nodes": [{"node_id": "tokyo", "online": true, "traffic": {"cycle_gb": 54.4, "today_gb": 9.9, "cap_gb": 500}, "services": {"xray": {"active": "active"}}, "error": ""}]}
+{"time": "...", "nodes": [{"node_id": "node1", "online": true, "traffic": {"cycle_gb": 54.4, "today_gb": 9.9, "cap_gb": 500}, "services": {"xray": {"active": "active"}}, "error": ""}]}
 ```
 
 ## 不要做的事

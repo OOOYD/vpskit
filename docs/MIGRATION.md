@@ -38,8 +38,8 @@ git push -u origin main
 视为泄露：
 
 ```bash
-./vpskit rotate tokyo --all --yes
-./vpskit plan tokyo && ./vpskit apply tokyo --yes
+./vpskit rotate node1 --all --yes
+./vpskit plan node1 && ./vpskit apply node1 --yes
 # 所有客户端重新导入订阅
 ```
 
@@ -48,7 +48,7 @@ git push -u origin main
 ## 二、把现网节点纳入工具（adopt）
 
 ```bash
-./vpskit adopt tokyo --host <VPS_IP> --ssh-alias tokyo --title '<节点名>'
+./vpskit adopt node1 --host <VPS_IP> --ssh-alias node1 --title '<节点名>'
 ```
 
 它会只读导入：
@@ -65,14 +65,14 @@ git push -u origin main
 写入：
 
 - `nodes.yaml`（0600，gitignored）
-- `state/tokyo/secrets.json`（0600，gitignored）
+- `state/node1/secrets.json`（0600，gitignored）
 
 > 注意：`adopt --force` 会覆盖 `nodes.yaml`，可能丢掉你手动加的 `admin_ips`。覆盖后重新检查。
 
 ## 三、首次 apply 前检查
 
 ```bash
-./vpskit plan tokyo --show-diff
+./vpskit plan node1 --show-diff
 ```
 
 重点看：
@@ -85,7 +85,7 @@ git push -u origin main
    `SUB_ROUTES` 应把原路径指向该文件。
 5. `nft: ok` / `xray: ok` / 无阻断项。
 
-如果 xray/ss 的密钥出现变化：**停下来**，检查 `state/tokyo/secrets.json`，不要 apply。
+如果 xray/ss 的密钥出现变化：**停下来**，检查 `state/node1/secrets.json`，不要 apply。
 
 ## 四、apply 窗口
 
@@ -93,11 +93,11 @@ git push -u origin main
 
 - 有 VNC/控制台可用；
 - 避开用户高峰；
-- 知道回滚命令：`./vpskit rollback tokyo`；
+- 知道回滚命令：`./vpskit rollback node1`；
 - 知道应急命令：`nft flush ruleset` + `systemctl stop fail2ban`。
 
 ```bash
-./vpskit apply tokyo --yes
+./vpskit apply node1 --yes
 ```
 
 顺序与保险丝见 `docs/ARCHITECTURE.md`。apply 会：
@@ -112,9 +112,9 @@ git push -u origin main
 ## 五、apply 后验证
 
 ```bash
-./vpskit verify tokyo
+./vpskit verify node1
 ./vpskit status
-./vpskit plan tokyo --check     # 应输出 same=33、退出 0
+./vpskit plan node1 --check     # 应输出 same=33、退出 0
 ```
 
 再从本机/手机：
@@ -122,7 +122,7 @@ git push -u origin main
 - 流量页 URL（key 未变）
 - 订阅 URL（路径未变；内容仍是 `/opt/stash/config.yaml`）
 - 客户端刷新订阅、测 REALITY
-- `ssh tokyo ops status`
+- `ssh node1 ops status`
 
 一次实测结果：`verify` 全绿；订阅 200/9729B；流量页 200；`plan` same=33；
 fail2ban 用 `198.51.100.77` 封/解成功；`traffic-snapshot.service` 生成 daily 快照/备份。
@@ -158,8 +158,8 @@ fail2ban 用 `198.51.100.77` 封/解成功；`traffic-snapshot.service` 生成 d
 ## 八、回滚后
 
 ```bash
-./vpskit rollback tokyo
-./vpskit verify tokyo
+./vpskit rollback node1
+./vpskit verify node1
 ```
 
 如果回滚后订阅/流量页还是不对，检查：

@@ -216,7 +216,7 @@ ssh <host> /opt/traffic/unattr.py
 
 ```yaml
 nodes:
-  tokyo: {...}
+  node1: {...}
   new-vps: {...}
 ```
 
