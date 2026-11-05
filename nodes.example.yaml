@@ -18,6 +18,12 @@ defaults:
   daily_hard_gb: 30
   admin_ips: []            # 家里/公司出口 IP 或 CIDR；apply 时会把当前 SSH 来源临时加进去
   xray_version: "26.7.28"  # 写死版本，不要用 latest
+  # 生命周期（可选，仅为通用示例，不要写真实商家/日期到公开仓库）
+  # provider: "Example Provider"
+  # line: "163 / CN2GIA / BGP"
+  # purchased_on: "2026-01-01"
+  # expires_on: "2027-01-01"
+  # billing_cycle: yearly
 
 panel:
   listen: 127.0.0.1
