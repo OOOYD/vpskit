@@ -523,6 +523,8 @@ def _kitconf(node: NodeConfig, sv: Dict[str, Any]) -> str:
         "MAIL_PASS_ENV": node.mail_pass_env,
         "MAIL_TO": node.mail_to,
         "TRAFFIC_SNAPSHOT_KEEP_DAYS": node.traffic_snapshot_keep_days,
+        "RESTIC_REPO": node.restic_repo,
+        "RESTIC_PASSWORD_FILE": node.restic_password_file,
         "CLIENTS": [c.email for c in node.clients],
     }
     lines = [
@@ -634,6 +636,7 @@ def _logrotate(node: NodeConfig) -> str:
         "/opt/ops/selfheal.log",
         "/root/ops/audit-auth.log",
         "/root/ops/kit-install.log",
+        "/var/log/vpskit-restic.log",
     ]
     return "\n".join(
         [

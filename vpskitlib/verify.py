@@ -149,6 +149,8 @@ def verify_node(node: NodeConfig, root: Path, remote: Remote, *, prepared: Optio
             "status=%s bytes=%d" % (status, len(body)),
             critical=True,
         )
+        status, _ = _http(host, node.sub_port, "/healthz")
+        v.add("http:sub-healthz", status == 200, "status=%s" % status, critical=False)
     if node.traffic_web_enable:
         key = str(p.secrets.get("traffic_web_key", ""))
         status, body = _http(host, node.traffic_web_port, "/?k=" + key)
@@ -158,6 +160,8 @@ def verify_node(node: NodeConfig, root: Path, remote: Remote, *, prepared: Optio
             "status=%s bytes=%d" % (status, len(body)),
             critical=True,
         )
+        status, _ = _http(host, node.traffic_web_port, "/healthz")
+        v.add("http:traffic-healthz", status == 200, "status=%s" % status, critical=False)
 
     # summary.json 新鲜度
     try:

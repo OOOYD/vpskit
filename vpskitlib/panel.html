@@ -182,6 +182,12 @@ function render(){
     } else {
       html += '<div class="alert ok">● 无告警</div>';
     }
+    if (n.unattr && n.unattr.ch443) {
+      var ua = n.unattr;
+      html += '<div class="change"><b>REALITY 未归属</b> ' + esc(Number(ua.ch443.total_gb || 0).toFixed(2)) + ' GB / 7d · 日均 ' + esc(Number(ua.ch443.daily_avg_gb || 0).toFixed(2)) + ' GB' +
+              (Number(ua.ch443.daily_avg_gb || 0) > Number(ua.threshold_gb || 1.5) ? ' · 偏高' : '') +
+              ' · SS ' + esc(Number((ua.ch40244 || {}).total_gb || 0).toFixed(2)) + ' GB</div>';
+    }
     if (!SHARE && n.changes && n.changes.length){
       var c = n.changes[n.changes.length-1];
       html += '<div class="change"><b>' + esc(c.title || '') + '</b> · ' + esc(c.time || '') + '</div>';

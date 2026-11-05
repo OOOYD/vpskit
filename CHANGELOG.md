@@ -7,6 +7,10 @@
 - 新增 `unattr.service` / `unattr.timer`；`verify`/`status`/流量页/面板展示
 - SSH 上传增加重试；Windows 控制端 UTF-8/锁/tar 修正与 Windows smoke CI
 - 文档：单一来源原则（生产不手改，只 `plan/apply`）
+- 告警：服务/磁盘/内存/未归属；邮件可选（无 Telegram）
+- `/healthz`：订阅页/流量页供外部探活
+- 可选 restic 离岸备份（配置 `restic_repo` 才启用）
+- SSH 连接复用（ControlMaster），减少 apply/verify 的握手与限速
 
 ## 1.0.0 — 2026-11-03
 

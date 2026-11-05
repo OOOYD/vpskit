@@ -8,9 +8,11 @@
   * 默认不把客户端 IP 发给第三方 GeoIP（labels 只来自本地 ip_labels.json）。
 """
 import datetime
+import hashlib
 import json
 import os
 import re
+import shutil
 import smtplib
 import subprocess
 import sys
@@ -42,6 +44,8 @@ DAILY_HARD_GB = float(_c("DAILY_HARD_GB", 30))
 REALITY_PORT = int(_c("REALITY_PORT", 443))
 SS_PORT = int(_c("SS_PORT", 0))
 SS_ENABLE = bool(_c("SS_ENABLE", False))
+TRAFFIC_WEB_ENABLE = bool(_c("TRAFFIC_WEB_ENABLE", True))
+SUB_ENABLE = bool(_c("SUB_ENABLE", True))
 SUMMARY_PATH = _c("SUMMARY_PATH", os.path.join(BASE, "summary.json"))
 CHANGELOG_JSONL = _c("CHANGELOG_JSONL", os.path.join(BASE, "changelog.jsonl"))
 SMTP_HOST = _c("SMTP_HOST", "smtp.qq.com")
@@ -326,7 +330,15 @@ def ip_rows(usage, limit=20):
 # ---------------------------------------------------------------- system
 
 
-SERVICES = ["xray", "ss-server", "traffic-web", "sub", "fail2ban", "nftables"]
+SERVICES = [
+    "xray", "ss-server", "traffic-web", "sub", "fail2ban", "nftables",
+    "traffic-monitor.timer", "unattr.timer", "autoban.timer",
+    "xray-selfheal.timer", "traffic-snapshot.timer",
+]
+REQUIRED_SERVICES = [
+    "xray", "traffic-web", "sub", "fail2ban", "nftables",
+    "traffic-monitor.timer", "unattr.timer",
+]
 
 
 def service_states():
@@ -338,6 +350,24 @@ def service_states():
         except Exception:
             result[name] = "unknown"
     return result
+
+
+def system_info():
+    info = {"disk_pct": 0.0, "disk_free_gb": 0.0, "mem_available_mb": 0}
+    try:
+        du = shutil.disk_usage("/")
+        info["disk_pct"] = round(du.used / du.total * 100, 1) if du.total else 0.0
+        info["disk_free_gb"] = round(du.free / 1e9, 1)
+    except Exception:
+        pass
+    try:
+        for line in open("/proc/meminfo", encoding="utf-8"):
+            if line.startswith("MemAvailable:"):
+                info["mem_available_mb"] = int(line.split()[1]) // 1024
+                break
+    except OSError:
+        pass
+    return info
 
 
 def fail2ban_stats():
@@ -359,7 +389,7 @@ def xray_version():
 # ---------------------------------------------------------------- alerts / mail
 
 
-def build_alerts(cycle_gb, today_gb):
+def build_alerts(cycle_gb, today_gb, services=None, system=None, unattr=None):
     alerts = []
     if cycle_gb >= CAP_GB:
         alerts.append({"txt": "本周期已超 %.0f GB 额度，可能被厂商限速" % CAP_GB, "sev": 2})
@@ -376,6 +406,32 @@ def build_alerts(cycle_gb, today_gb):
                 alerts.append({"txt": "autoban 最近有封禁：%s" % pending.splitlines()[0][:80], "sev": 1})
         except OSError:
             pass
+    services = services or {}
+    required = ["xray", "fail2ban", "nftables", "traffic-monitor.timer", "unattr.timer"]
+    if TRAFFIC_WEB_ENABLE:
+        required.append("traffic-web")
+    if SUB_ENABLE:
+        required.append("sub")
+    if SS_ENABLE:
+        required.append("ss-server")
+    bad = [name for name in required if services.get(name) != "active"]
+    if bad:
+        alerts.append({"txt": "服务异常: " + ", ".join("%s=%s" % (n, services.get(n, "unknown")) for n in bad), "sev": 2})
+    system = system or {}
+    disk_pct = float(system.get("disk_pct") or 0)
+    mem_mb = int(system.get("mem_available_mb") or 0)
+    if disk_pct >= 90:
+        alerts.append({"txt": "磁盘使用 %.1f%%，剩余 %.1f GB" % (disk_pct, system.get("disk_free_gb", 0)), "sev": 2})
+    elif disk_pct >= 85:
+        alerts.append({"txt": "磁盘使用 %.1f%%，接近上限" % disk_pct, "sev": 1})
+    if 0 < mem_mb < 80:
+        alerts.append({"txt": "可用内存仅 %d MB" % mem_mb, "sev": 2})
+    elif 0 < mem_mb < 120:
+        alerts.append({"txt": "可用内存偏低: %d MB" % mem_mb, "sev": 1})
+    if unattr:
+        ch = unattr.get("ch443") or {}
+        if ch.get("level") == "high":
+            alerts.append({"txt": "REALITY 未归属流量偏高: 日均 %.2f GB/天" % float(ch.get("daily_avg_gb") or 0), "sev": 1})
     return alerts
 
 
@@ -430,12 +486,15 @@ def maybe_mail(alerts, cycle_gb, today_gb, day_ok):
         key = "d_hard_" + today
     elif day_ok and today_gb >= DAILY_ALERT_GB:
         key = "d_soft_" + today
-    if not key or state.get(key) == today:
+    if not key:
+        blob = "|".join(sorted(a["txt"] for a in alerts))
+        key = "alert_" + today + "_" + hashlib.sha1(blob.encode()).hexdigest()[:8]
+    if state.get(key) == today:
         return
     lines = ["%s" % TITLE, ""]
     lines += ["- " + a["txt"] for a in alerts]
     lines += ["", "周期: %.1f / %.0f GB（%s 起）" % (cycle_gb, CAP_GB, cycle_start_text())]
-    if send_mail("[%s] 流量告警" % TITLE, "\n".join(lines)):
+    if send_mail("[%s] VPS 告警" % TITLE, "\n".join(lines)):
         state[key] = today
         save_json(state_path, state)
 
@@ -468,7 +527,10 @@ def main():
         for ip, v in sorted(ss_usage.items(), key=lambda kv: -(int(kv[1].get("rx", 0)) + int(kv[1].get("tx", 0))))[:5]
     ]
 
-    alerts = build_alerts(cycle_gb, today_gb)
+    svc = service_states()
+    sysinfo = system_info()
+    unattr = load_json(os.path.join(BASE, "unattr.json"), {})
+    alerts = build_alerts(cycle_gb, today_gb, svc, sysinfo, unattr)
     summary = {
         "updated": now_text,
         "node_id": NODE_ID,
@@ -490,7 +552,9 @@ def main():
         "ss_gb": round(ss_total / 1e9, 2),
         "ss_ips": ss_rows,
         "alerts": alerts,
-        "services": service_states(),
+        "system": sysinfo,
+        "unattr": unattr,
+        "services": svc,
         "fail2ban": fail2ban_stats(),
         "xray": [xray_version()],
     }

@@ -79,6 +79,8 @@ def _apt_packages(node: NodeConfig) -> List[str]:
         packages.append("shadowsocks-libev")
     if node.auto_updates:
         packages.append("unattended-upgrades")
+    if node.restic_repo:
+        packages.append("restic")
     return packages
 
 

@@ -25,6 +25,9 @@ SSH_OPTS = [
     "-o", "StrictHostKeyChecking=accept-new",
     "-o", "LogLevel=ERROR",
 ]
+if os.name != "nt":
+    # 复用连接：apply/verify 会发很多 SSH 命令，避免每次握手 + 触发 22 端口限速
+    SSH_OPTS += ["-o", "ControlMaster=auto", "-o", "ControlPath=~/.ssh/vpskit-cm-%C", "-o", "ControlPersist=120"]
 
 
 class RemoteError(VpskitError):

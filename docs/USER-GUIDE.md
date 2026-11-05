@@ -192,6 +192,13 @@ ssh <host> /opt/traffic/unattr.py
 
 全绿才代表这次部署可用。
 
+## 6.5 告警与外部探活
+
+- 邮件可选：`mail_user`/`mail_to` + `/root/.smtp.env`；留空就不发
+- 不内置 Telegram
+- 外部探活：`http://<IP>:19000/healthz`、`http://<IP>:8888/healthz`、TCP 443/22
+- 离岸备份：`restic_repo` + `/root/.restic-pass`；不配置就只做本地快照
+
 ## 7. 面板（可选）
 
 ```bash

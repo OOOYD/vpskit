@@ -119,6 +119,34 @@ fail2ban-client get sshd actions
   fail2ban-client set sshd unbanip 198.51.100.77
   ```
 
+### 告警（只支持邮件，可选）
+
+`monitor.py` 会检查：服务 inactive、磁盘 ≥85/90%、可用内存 <120/80MB、额度/日流量、autoban、REALITY 未归属偏高。
+
+```yaml
+# nodes.yaml
+mail_user: you@example.com
+mail_to: you@example.com
+smtp_host: smtp.qq.com
+smtp_port: 465
+mail_pass_env: SMTP_PASS
+```
+
+SMTP 密码放 `/root/.smtp.env`（600），然后 `plan/apply`。留空 = 不发邮件，只在流量页/面板显示。没有 Telegram 集成。
+
+### 外部探活
+
+VPS 本机监控看不到“整机失联/被墙”。用 Uptime Kuma、Better Stack 或另一台机器监控：
+
+```text
+http://<VPS_IP>:19000/healthz     # 200，无需 key
+http://<VPS_IP>:8888/healthz      # 200，无需订阅路径
+tcp 443                          # REALITY
+tcp 22                           # SSH
+```
+
+国外探活无法判断 GFW；大陆侧再用 `kit-wallcheck.py` 定时跑一次。
+
 ### 未归属流量（unattr）
 
 ```bash
@@ -168,6 +196,16 @@ journalctl -u xray -n 50 --no-pager
 - 面板启动后后台采集；第一次请求可能要等一个 SSH 往返
 - 节点离线会显示错误；检查 `ssh <alias> vpskit-status --json`
 - 公网必须 `panel.token` + TLS
+
+## 离岸备份（可选 restic）
+
+```yaml
+# nodes.yaml
+restic_repo: s3:s3.amazonaws.com/<bucket>/vpskit
+restic_password_file: /root/.restic-pass   # 600
+```
+
+配置后 `apply` 会装 `restic`；`traffic-snapshot.timer` 每天备份 `/root/ops /opt/traffic /opt/sub /etc/nftables.conf` 并保留 7 日/4 周。日志 `/var/log/vpskit-restic.log`。不配置 = 只做本地快照。
 
 ## 备份策略
 

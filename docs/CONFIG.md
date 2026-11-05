@@ -98,6 +98,8 @@ REALITY 私钥/公钥/shortId 在 `secrets.json` 的 `reality` 下，由工具�
 | `xray_version` | `26.7.28` | 写死版本；`latest` 不校验 checksum |
 | `xray_download_base` | GitHub | 可换成镜像 |
 | `traffic_snapshot_keep_days` | `14` | 每日快照/备份保留天数 |
+| `restic_repo` | `""` | 可选；配置后每日 restic 离岸备份 |
+| `restic_password_file` | `/root/.restic-pass` | restic 密码文件（600） |
 
 ## 邮件（可选）
 

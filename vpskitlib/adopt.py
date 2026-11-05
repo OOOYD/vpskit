@@ -313,6 +313,8 @@ def _node_dict(node: NodeConfig) -> Dict[str, Any]:
         "autoban_thresh_mb": node.autoban_thresh_mb,
         "autoban_strikes": node.autoban_strikes,
         "traffic_snapshot_keep_days": node.traffic_snapshot_keep_days,
+        "restic_repo": node.restic_repo,
+        "restic_password_file": node.restic_password_file,
     }
 
 
