@@ -205,7 +205,7 @@ v2ray 系订阅是「base64 编码的 URI 列表」，vpskit 可以同时输出 
 
 ```yaml
 nodes:
-  tokyo:
+  node-id:            # 你的节点 ID
     sub_formats: [clash, v2ray]   # 默认只有 clash；老配置完全不受影响
 ```
 
