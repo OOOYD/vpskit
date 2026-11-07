@@ -480,6 +480,7 @@ def _kitconf(node: NodeConfig, sv: Dict[str, Any]) -> str:
     sub_paths = {c.email: sv["clients"][c.email]["sub_path"] for c in node.clients}
     sub_files: Dict[str, str] = {}
     sub_routes: Dict[str, str] = {}
+    sub_route_types: Dict[str, str] = {}
     for c in node.clients:
         path = sv["clients"][c.email]["sub_path"]
         if node.sub_existing_file:
@@ -489,6 +490,12 @@ def _kitconf(node: NodeConfig, sv: Dict[str, Any]) -> str:
         filename = "sub-%s.yaml" % emails[0]
         sub_files[c.email] = filename
         sub_routes[path] = filename
+        sub_route_types[path] = "text/yaml; charset=utf-8"
+    if "v2ray" in node.sub_formats:
+        for c in node.clients:
+            vpath = sv["clients"][c.email]["v2ray_path"]
+            sub_routes[vpath] = "sub-%s.txt" % c.email
+            sub_route_types[vpath] = "text/plain; charset=utf-8"
     values = {
         "NODE_ID": node.id,
         "KIT_VERSION": __version__,
@@ -510,6 +517,7 @@ def _kitconf(node: NodeConfig, sv: Dict[str, Any]) -> str:
         "SUB_PATHS": sub_paths,
         "SUB_FILES": sub_files,
         "SUB_ROUTES": sub_routes,
+        "SUB_ROUTE_TYPES": sub_route_types,
         "DATA_DIR": "/opt/traffic",
         "SUMMARY_PATH": "/opt/traffic/summary.json",
         "CHANGELOG_JSONL": "/opt/traffic/changelog.jsonl",
@@ -686,7 +694,7 @@ def _node_info(node: NodeConfig, opts: RenderOptions) -> str:
     return yaml.safe_dump(info, allow_unicode=True, sort_keys=False)
 
 
-def _vless_uri(node: NodeConfig, sv: Dict[str, Any], email: str, name: str) -> str:
+def _vless_uri(node: NodeConfig, sv: Dict[str, Any], email: str, name: str, host: str = "") -> str:
     client = sv["clients"][email]
     params = {
         "encryption": "none",
@@ -701,7 +709,7 @@ def _vless_uri(node: NodeConfig, sv: Dict[str, Any], email: str, name: str) -> s
     if flow:
         params["flow"] = flow
     query = "&".join("%s=%s" % (k, quote(str(v), safe="")) for k, v in params.items())
-    host = node.host
+    host = host or node.host
     if ":" in host and not host.startswith("["):
         host = "[%s]" % host
     return "vless://%s@%s:%d?%s#%s" % (
@@ -721,6 +729,25 @@ def _ss_uri(node: NodeConfig, sv: Dict[str, Any], name: str, server: str) -> str
     if ":" in host and not host.startswith("["):
         host = "[%s]" % host
     return "ss://%s@%s:%d#%s" % (userinfo, host, node.ss_port, quote(name, safe=""))
+
+
+def _v2ray_subscription(
+    node: NodeConfig,
+    sv: Dict[str, Any],
+    email: str,
+    opts: RenderOptions,
+) -> str:
+    """v2rayA / v2rayN 订阅：base64(逐行 vless://)，IPv4 与 IPv6 各一条。"""
+    title = node.display_title
+    lines: List[str] = []
+    v4 = opts.addresses.get("ipv4") or node.host
+    if v4:
+        lines.append(_vless_uri(node, sv, email, "%s-v4" % title, v4))
+    v6 = opts.addresses.get("ipv6", "")
+    if opts.has_v6 and v6:
+        lines.append(_vless_uri(node, sv, email, "%s-v6" % title, v6))
+    payload = "\n".join(lines) + "\n"
+    return base64.b64encode(payload.encode("utf-8")).decode()
 
 
 def _default_subscription(
@@ -878,9 +905,13 @@ def _client_import(node: NodeConfig, sv: Dict[str, Any], opts: RenderOptions) ->
             "",
         ]
         if node.sub_enable:
-            lines.append("- 订阅: `http://%s:%d%s`" % (
+            lines.append("- Clash/Stash 订阅: `http://%s:%d%s`" % (
                 node.host, node.sub_port, sv["clients"][client.email]["sub_path"]
             ))
+            if "v2ray" in node.sub_formats:
+                lines.append("- v2rayA / v2rayN 订阅: `http://%s:%d%s`" % (
+                    node.host, node.sub_port, sv["clients"][client.email]["v2ray_path"]
+                ))
         lines.append("")
     if node.ss_enable and opts.has_v6 and opts.addresses.get("ipv6"):
         lines += [
@@ -935,6 +966,17 @@ def render(
             "www-data",
         )
     )
+    if node.sub_enable and "v2ray" in node.sub_formats:
+        for client in node.clients:
+            files.append(
+                _text(
+                    "/opt/sub/data/sub-%s.txt" % client.email,
+                    _v2ray_subscription(node, sv, client.email, opts),
+                    0o640,
+                    "root",
+                    "www-data",
+                )
+            )
     if node.sub_enable and not node.sub_existing_file:
         groups: Dict[str, List[str]] = {}
         for client in node.clients:

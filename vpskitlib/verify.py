@@ -1,6 +1,7 @@
 """verify：从本地 + 远端两侧验证实际状态。"""
 from __future__ import annotations
 
+import base64
 import datetime as _dt
 import http.client
 import json
@@ -11,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from .config import NodeConfig
 from .remote import Remote
-from .secrets import client_sub_path
+from .secrets import client_sub_path, client_v2ray_path
 from .util import VpskitError, detail, info, ok, step, warn
 from .workflow import Prepared, prepare
 
@@ -149,6 +150,21 @@ def verify_node(node: NodeConfig, root: Path, remote: Remote, *, prepared: Optio
             "status=%s bytes=%d" % (status, len(body)),
             critical=True,
         )
+        if "v2ray" in getattr(node, "sub_formats", ["clash"]):
+            vpath = client_v2ray_path(p.secrets, node.clients[0].email)
+            vstatus, vbody = _http(host, node.sub_port, vpath)
+            decoded = b""
+            try:
+                decoded = base64.b64decode(vbody)
+            except Exception:
+                decoded = b""
+            vlines = [x for x in decoded.decode("utf-8", "ignore").splitlines() if x.startswith("vless://")]
+            v.add(
+                "http:sub-v2ray",
+                vstatus == 200 and len(vlines) >= 1 and "security=reality" in decoded.decode("utf-8", "ignore"),
+                "status=%s bytes=%d nodes=%d" % (vstatus, len(vbody), len(vlines)),
+                critical=True,
+            )
         status, _ = _http(host, node.sub_port, "/healthz")
         v.add("http:sub-healthz", status == 200, "status=%s" % status, critical=False)
     if node.traffic_web_enable:

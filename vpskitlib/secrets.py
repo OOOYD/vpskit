@@ -30,7 +30,11 @@ UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 
 
 def _new_client_record() -> Dict[str, str]:
-    return {"uuid": str(uuid.uuid4()), "sub_path": random_sub_path()}
+    return {
+        "uuid": str(uuid.uuid4()),
+        "sub_path": random_sub_path(),
+        "v2ray_path": random_sub_path(),
+    }
 
 
 def _normalize(data: Dict[str, Any], node: NodeConfig) -> bool:
@@ -91,6 +95,10 @@ def _normalize(data: Dict[str, Any], node: NodeConfig) -> bool:
         if not sub_path.startswith("/") or len(sub_path) < 9:
             rec["sub_path"] = random_sub_path()
             changed = True
+        v2ray_path = str(rec.get("v2ray_path") or "")
+        if not v2ray_path.startswith("/") or len(v2ray_path) < 9:
+            rec["v2ray_path"] = random_sub_path()
+            changed = True
     return changed
 
 
@@ -134,6 +142,13 @@ def client_sub_path(secrets: Dict[str, Any], email: str) -> str:
         raise VpskitError("secrets 缺少 client %s 的订阅路径" % email) from exc
 
 
+def client_v2ray_path(secrets: Dict[str, Any], email: str) -> str:
+    try:
+        return str(secrets["clients"][email]["v2ray_path"])
+    except KeyError as exc:
+        raise VpskitError("secrets 缺少 client %s 的 v2ray 订阅路径" % email) from exc
+
+
 def rotate(
     node: NodeConfig,
     secrets: Dict[str, Any],
@@ -161,6 +176,7 @@ def rotate(
             if client_email and email != client_email:
                 continue
             rec["sub_path"] = random_sub_path()
+            rec["v2ray_path"] = random_sub_path()
         changed.append("订阅路径" + ("（%s）" % client_email if client_email else ""))
     if "all" in what or "uuid" in what:
         for email, rec in secrets.setdefault("clients", {}).items():
@@ -180,6 +196,7 @@ def summary(node: NodeConfig, secrets: Dict[str, Any]) -> Dict[str, Any]:
         clients[client.email] = {
             "uuid": fingerprint(str(rec.get("uuid", ""))),
             "sub_path": fingerprint(str(rec.get("sub_path", ""))),
+            "v2ray_path": fingerprint(str(rec.get("v2ray_path", ""))),
         }
     return {
         "reality_public": fingerprint(str(reality.get("public_key", ""))),
@@ -202,6 +219,7 @@ def secret_values(node: NodeConfig, secrets: Dict[str, Any]) -> Dict[str, Any]:
             c.email: {
                 "uuid": client_uuid(secrets, c.email),
                 "sub_path": client_sub_path(secrets, c.email),
+                "v2ray_path": client_v2ray_path(secrets, c.email),
             }
             for c in node.clients
         },

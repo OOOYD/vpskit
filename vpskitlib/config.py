@@ -49,6 +49,7 @@ DEFAULTS: Dict[str, Any] = {
     "ss_method": "chacha20-ietf-poly1305",
     "ss_expose_v4": False,
     "sub_enable": True,
+    "sub_formats": ["clash"],
     "sub_port": 8888,
     "sub_template": "",
     "sub_allow_ips": [],
@@ -147,6 +148,7 @@ class NodeConfig:
     ss_method: str = "chacha20-ietf-poly1305"
     ss_expose_v4: bool = False
     sub_enable: bool = True
+    sub_formats: List[str] = field(default_factory=lambda: ["clash"])
     sub_port: int = 8888
     sub_template: str = ""
     sub_existing_file: str = ""
@@ -367,6 +369,28 @@ class NodesConfig:
         return self.nodes[node_id]
 
 
+SUB_FORMATS = ("clash", "v2ray")
+
+
+def _sub_formats(value: Any) -> List[str]:
+    """订阅输出格式：clash（默认）/ v2ray（base64 的 URI 列表）。"""
+    if value is None:
+        return ["clash"]
+    if isinstance(value, str):
+        items = [x.strip().lower() for x in value.replace(",", " ").split() if x.strip()]
+    elif isinstance(value, (list, tuple)):
+        items = [str(x).strip().lower() for x in value if str(x).strip()]
+    else:
+        raise VpskitError("sub_formats 必须是列表或字符串")
+    out: List[str] = []
+    for item in items:
+        if item not in SUB_FORMATS:
+            raise VpskitError("sub_formats 只支持 %s，收到 %r" % (" / ".join(SUB_FORMATS), item))
+        if item not in out:
+            out.append(item)
+    return out or ["clash"]
+
+
 def _bool(value: Any, default: bool) -> bool:
     if isinstance(value, bool):
         return value
@@ -423,7 +447,7 @@ def _node_from_dict(node_id: str, data: Dict[str, Any], defaults: Dict[str, Any]
         "quota_gb", "quota_anchor_day", "daily_alert_gb", "daily_hard_gb", "admin_ips", "clients",
         "reality_port", "reality_dest", "reality_server_names", "reality_max_time_diff",
         "reality_fallback", "ss_enable", "ss_port", "ss_method", "ss_expose_v4",
-        "sub_enable", "sub_port", "sub_template", "sub_existing_file", "sub_allow_ips",
+        "sub_enable", "sub_formats", "sub_port", "sub_template", "sub_existing_file", "sub_allow_ips",
         "traffic_web_enable", "traffic_web_port", "traffic_web_allow_ips", "extra_web_ports",
         "ssh_harden", "sysctl", "auto_updates", "firewall_guard_seconds",
         "xray_version", "xray_download_base", "smtp_host", "smtp_port", "mail_user",
@@ -462,6 +486,7 @@ def _node_from_dict(node_id: str, data: Dict[str, Any], defaults: Dict[str, Any]
         ss_method=str(merged.get("ss_method") or "chacha20-ietf-poly1305"),
         ss_expose_v4=_bool(merged.get("ss_expose_v4"), False),
         sub_enable=_bool(merged.get("sub_enable"), True),
+        sub_formats=_sub_formats(merged.get("sub_formats")),
         sub_port=int(merged.get("sub_port") or 8888),
         sub_template=str(merged.get("sub_template") or "").strip(),
         sub_existing_file=str(merged.get("sub_existing_file") or "").strip(),

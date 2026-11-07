@@ -19,10 +19,38 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 from .config import NodesConfig, load_nodes
+from .paths import NodePaths
+from .secrets import client_sub_path, client_v2ray_path, load_secrets
 from .status import collect_all
 from .util import VpskitError, detail, info, mask_ip, warn
 
 ASSET = Path(__file__).resolve().parent / "panel.html"
+
+
+def _sub_urls(node, root: Path) -> Dict[str, Dict[str, str]]:
+    """每个 client 的订阅地址（只在完整视图里给，分享视图不下发）。"""
+    out: Dict[str, Dict[str, str]] = {}
+    if not node or not getattr(node, "sub_enable", False):
+        return out
+    try:
+        secrets = load_secrets(NodePaths(root, node.id).secrets)
+    except Exception:
+        return out
+    if not secrets:
+        return out
+    for client in node.clients:
+        try:
+            clash = "http://%s:%d%s" % (node.host, node.sub_port, client_sub_path(secrets, client.email))
+        except Exception:
+            clash = ""
+        v2ray = ""
+        if "v2ray" in getattr(node, "sub_formats", ["clash"]):
+            try:
+                v2ray = "http://%s:%d%s" % (node.host, node.sub_port, client_v2ray_path(secrets, client.email))
+            except Exception:
+                v2ray = ""
+        out[client.email] = {"clash": clash, "v2ray": v2ray}
+    return out
 
 
 def _mask_network(net: Dict[str, Any]) -> Dict[str, Any]:
@@ -357,8 +385,22 @@ class _State:
         return node_id
 
 
+def _with_sub_urls(data: List[Dict[str, Any]], state: "_State") -> List[Dict[str, Any]]:
+    nodes = getattr(state, "nodes", None)
+    root = getattr(state, "root", None)
+    if nodes is None or root is None:
+        return data
+    for item in data:
+        node = nodes.nodes.get(item.get("node_id") or "")
+        item["sub_urls"] = _sub_urls(node, root) if node else {}
+    return data
+
+
 def _page(state: _State, panel, *, share: bool, api: str, title: str) -> bytes:
-    data = _share_data(state.get()) if share else state.get()
+    if share:
+        data = _share_data(state.get())
+    else:
+        data = _with_sub_urls(state.get(), state)
     # 防止 </script> 提前闭合
     payload = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
     html = ASSET.read_text(encoding="utf-8")
@@ -457,7 +499,7 @@ def _make_handler(state: _State, panel, token: str, share_token: str):
                 if not self._authorized():
                     self._send(401, b"unauthorized", "text/plain; charset=utf-8")
                     return
-                data = state.get()
+                data = _with_sub_urls(state.get(), state)
                 self._send(200, json.dumps(data, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
                 return
             if path == "/" or path == "/index.html":

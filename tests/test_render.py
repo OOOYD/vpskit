@@ -35,6 +35,67 @@ class RenderTest(unittest.TestCase):
             addresses={"ipv4": "203.0.113.10", "ipv6": "2001:db8::10"},
         )
 
+
+    def test_v2ray_subscription_has_v4_and_v6(self):
+        import base64
+
+        self.node.sub_formats = ["clash", "v2ray"]
+        self.secrets = S.ensure_secrets(self.node, self.paths.secrets)
+        res = render(self.node, self.secrets, self.root, self.opts)
+        files = {f.path: f for f in res.files}
+        path = "/opt/sub/data/sub-main.txt"
+        self.assertIn(path, files)
+        spec = files[path]
+        self.assertEqual(oct(spec.mode), "0o640")
+        self.assertEqual((spec.owner, spec.group), ("root", "www-data"))
+        raw = spec.content if isinstance(spec.content, str) else spec.content.decode()
+        decoded = base64.b64decode(raw).decode()
+        lines = [x for x in decoded.splitlines() if x]
+        self.assertEqual(len(lines), 2)
+        self.assertIn("@203.0.113.10:443?", lines[0])
+        self.assertIn("@[2001:db8::10]:443?", lines[1])
+        for line in lines:
+            self.assertTrue(line.startswith("vless://"))
+            self.assertIn("encryption=none", line)
+            self.assertIn("security=reality", line)
+            self.assertIn("type=tcp", line)
+            self.assertIn("sni=", line)
+            self.assertIn("pbk=", line)
+            self.assertIn("sid=", line)
+        self.assertIn("-v4", lines[0].split("#")[-1])
+        self.assertIn("-v6", lines[1].split("#")[-1])
+
+    def test_v2ray_subscription_respects_flow(self):
+        import base64
+        from urllib.parse import unquote
+
+        self.node.sub_formats = ["v2ray"]
+        self.secrets = S.ensure_secrets(self.node, self.paths.secrets)
+        res = render(self.node, self.secrets, self.root, self.opts)
+        files = {f.path: f for f in res.files}
+        main = base64.b64decode(files["/opt/sub/data/sub-main.txt"].content).decode()
+        friend = base64.b64decode(files["/opt/sub/data/sub-friend.txt"].content).decode()
+        self.assertIn("flow=xtls-rprx-vision", unquote(main))
+        self.assertNotIn("flow=", unquote(friend))
+
+    def test_v2ray_routes_have_content_type(self):
+        self.node.sub_formats = ["clash", "v2ray"]
+        self.secrets = S.ensure_secrets(self.node, self.paths.secrets)
+        res = render(self.node, self.secrets, self.root, self.opts)
+        files = {f.path: f for f in res.files}
+        kitconf = files["/opt/traffic/kitconf.py"].content
+        if isinstance(kitconf, bytes):
+            kitconf = kitconf.decode()
+        self.assertIn("SUB_ROUTE_TYPES", kitconf)
+        self.assertIn("text/yaml; charset=utf-8", kitconf)
+        self.assertIn("text/plain; charset=utf-8", kitconf)
+
+    def test_clash_subscription_unchanged_without_v2ray(self):
+        res = render(self.node, self.secrets, self.root, self.opts)
+        names = {f.path for f in res.files}
+        self.assertIn("/opt/sub/data/sub-main.yaml", names)
+        self.assertNotIn("/opt/sub/data/sub-main.txt", names)
+
     def tearDown(self):
         self.td.cleanup()
 

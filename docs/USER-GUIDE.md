@@ -199,6 +199,25 @@ ssh <host> /opt/traffic/unattr.py
 - 外部探活：`http://<IP>:19000/healthz`、`http://<IP>:8888/healthz`、TCP 443/22
 - 离岸备份：`restic_repo` + `/root/.restic-pass`；不配置就只做本地快照
 
+## 6.5 软路由 v2ray 订阅（v2rayA / v2rayN）
+
+v2ray 系订阅是「base64 编码的 URI 列表」，vpskit 可以同时输出 Clash 和 v2ray 两种：
+
+```yaml
+nodes:
+  tokyo:
+    sub_formats: [clash, v2ray]   # 默认只有 clash；老配置完全不受影响
+```
+
+- 每个 client 多一条**独立路径**：`/opt/sub/data/sub-<client>.txt`（0640 root:www-data），
+  路径存在 `state/<node>/secrets.json` 的 `clients.<email>.v2ray_path`；`vpskit rotate --sub` 会同时轮换两种路径。
+- 内容是 `base64(vless-v4 + vless-v6)`，节点名带 `-v4` / `-v6`，IPv6 自动加方括号。
+- Clash 订阅完全不受影响（同样的路径、同样的字节）。
+- 面板「订阅」按钮可以直接查看并复制这两种链接。
+
+> ⚠️ `flow=xtls-rprx-vision` 需要 Xray 内核。软路由跑**纯 v2ray-core** 时，
+> 让该 client 的 `flow` 留空（或单独开一个不带 flow 的 client）。
+
 ## 7. 面板（可选）
 
 ```bash

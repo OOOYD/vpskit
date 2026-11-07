@@ -199,6 +199,8 @@ legacy/                旧版本地文件（gitignored）
   2. 用 Caddy/Nginx 加 HTTPS 反代到 `127.0.0.1:8787`
   3. 给朋友用 `share_token`：分享视图里 **IP 只保留前缀**（`203.0.*.*`），端口、客户端、变更记录一律不下发
 - 面板采集时通过 SSH 读取节点；不新增入站端口，不需要 agent。
+- **订阅格式**：默认输出 Clash/Stash YAML；`sub_formats: [clash, v2ray]` 额外给每个 client 生成
+  v2rayA/v2rayN 订阅（base64 的 URI 列表，**含 IPv4 与 IPv6 两条**）。面板「订阅」按钮可复制链接。
 
 ---
 

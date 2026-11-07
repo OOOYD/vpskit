@@ -132,6 +132,13 @@
   .dlg .btn{flex:0 0 auto;min-width:76px;height:30px;padding:0 12px}
   .dlg .btn.primary{background:var(--green);border-color:var(--green);color:var(--panel)}
   .dlg .btn.primary[disabled]{opacity:.6}
+  .subclient{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
+  .subclient:first-child{border-top:0;padding-top:0}
+  .scname{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .subrow{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:8px;align-items:center}
+  .subrow .sl{font-size:10px;color:var(--mut);white-space:nowrap}
+  .subrow code{font:10px/1.5 ui-monospace,Menlo,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .subrow .btn{flex:0 0 auto;height:26px;min-width:52px;font-size:9.5px}
   .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,8px);background:var(--ink);color:var(--panel);font-size:11px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:70;max-width:72vw;text-align:center;line-height:1.45}
   .toast.show{opacity:.95;transform:translate(-50%,0)}
   body.editing .toast{bottom:76px}
@@ -401,7 +408,7 @@
     <div class="side-actions">
       <div class="side-label" style="margin:0">Display &amp; Actions</div>
       <span class="theme" id="theme" aria-label="主题"><button data-theme="paper" class="on">纸感</button><button data-theme="cool">冷白</button><button data-theme="dark">暗黑</button></span>
-      <div class="actrow"><button class="btn" id="export" type="button">导出</button><button class="btn" id="qrcode" type="button" title="订阅链接 / 二维码（下一步接入）">扫码</button><button class="btn" id="alerts" type="button" title="告警邮箱">告警</button><button class="btn" id="layout" type="button" title="自由拖动卡片位置">布局</button></div>
+      <div class="actrow"><button class="btn" id="export" type="button">导出</button><button class="btn" id="subs" type="button" title="Clash / v2ray 订阅链接">订阅</button><button class="btn" id="alerts" type="button" title="告警邮箱">告警</button><button class="btn" id="layout" type="button" title="自由拖动卡片位置">布局</button></div>
     </div>
   </aside>
 
@@ -496,6 +503,17 @@
     <div class="dlgfoot">
       <span class="l">留空表示关闭邮件告警。</span>
       <span class="r"><button class="btn" id="mailCancel" type="button">取消</button><button class="btn primary" id="mailSave" type="button">保存</button></span>
+    </div>
+  </div>
+</div>
+<div class="backdrop" id="subDlg" role="dialog" aria-modal="true" aria-label="订阅链接">
+  <div class="dlg" style="width:560px">
+    <h2>订阅链接</h2>
+    <div class="sub">Clash / Stash 与 v2ray 各一条；v2ray 那条里含 <b>IPv4 + IPv6</b> 两个节点。链接本身就是凭据，别外传。</div>
+    <div id="subList"></div>
+    <div class="dlgfoot">
+      <span class="l">轮换路径：<code>./vpskit rotate --sub &lt;节点&gt;</code></span>
+      <span class="r"><button class="btn" id="subClose" type="button">关闭</button></span>
     </div>
   </div>
 </div>
@@ -822,10 +840,36 @@ $('export').onclick = () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   toast('已导出 JSON（不含秘密）');
 };
-$('qrcode').onclick = () => toast('订阅 / 二维码还没接：需要读 state/<id>/secrets.json 生成链接，下一步做', 3200);
+function openSubs() {
+  const n = current();
+  const urls = (n && n.sub_urls) || {};
+  const emails = Object.keys(urls);
+  const box = $('subList');
+  if (!emails.length) {
+    box.innerHTML = '<div class="empty-hint">这个节点没有开启订阅（nodes.yaml 里 sub_enable）</div>';
+  } else {
+    const row = (label, url) => `<div class="subrow"><span class="sl">${label}</span><code title="${esc(url)}">${esc(url)}</code><button class="btn" data-copy="${esc(url)}" type="button">复制</button></div>`;
+    box.innerHTML = emails.map(e => {
+      const u = urls[e] || {};
+      const rows = [];
+      if (u.clash) rows.push(row('Clash / Stash', u.clash));
+      if (u.v2ray) rows.push(row('v2ray / v2rayA', u.v2ray));
+      return `<div class="subclient"><div class="scname">${esc(e)}</div>${rows.join('')}</div>`;
+    }).join('');
+    box.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '已复制'; setTimeout(() => b.textContent = '复制', 1200); }
+      catch (e) { toast('复制失败，手动选中链接吧'); }
+    });
+  }
+  $('subDlg').classList.add('open');
+}
+function closeSubs() { $('subDlg').classList.remove('open'); }
+$('subs').onclick = openSubs;
+$('subClose').onclick = closeSubs;
+$('subDlg').addEventListener('click', e => { if (e.target === $('subDlg')) closeSubs(); });
 if (SHARE) {
   $('export').style.display = 'none';
-  $('qrcode').style.display = 'none';
+  $('subs').style.display = 'none';
   const b1 = $('addNodeBtn'), b2 = $('addNodeBtn2');
   if (b1) b1.style.display = 'none';
   if (b2) b2.style.display = 'none';

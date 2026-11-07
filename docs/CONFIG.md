@@ -76,6 +76,7 @@ REALITY 私钥/公钥/shortId 在 `secrets.json` 的 `reality` 下，由工具�
 | 字段 | 默认 | 说明 |
 |---|---|---|
 | `sub_enable` | `true` | |
+| `sub_formats` | `[clash]` | 订阅输出格式：`clash`（YAML）/ `v2ray`（base64 的 URI 列表，含 IPv4+IPv6）。可同时开 |
 | `sub_port` | `8888` | |
 | `sub_template` | `""` | 自定义 YAML 模板；支持 `{{PROXIES}}`/`{{PROXY_GROUPS}}`/`{{RULES}}`/`{{SERVER}}`/`{{PORT}}`/`{{UUID}}`/`{{PUBLIC_KEY}}`/`{{SHORT_ID}}`/`{{SNI}}`/`{{SS_*}}` |
 | `sub_existing_file` | `""` | 迁移用：直接服务现网已有 YAML（如 `/opt/stash/config.yaml`），不生成新订阅；保留旧路径/旧规则 |

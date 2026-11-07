@@ -26,13 +26,17 @@ def _c(name, default):
 PORT = int(_c("SUB_PORT", 8888))
 DATA_DIR = _c("SUB_DATA_DIR", "/opt/sub/data")
 SUB_ROUTES = _c("SUB_ROUTES", {}) or {}
+SUB_ROUTE_TYPES = _c("SUB_ROUTE_TYPES", {}) or {}
 SUB_PATHS = _c("SUB_PATHS", {}) or {}
 SUB_FILES = _c("SUB_FILES", {}) or {}
 
 ROUTES = {}
+ROUTE_TYPES = {}
+DEFAULT_TYPE = "text/yaml; charset=utf-8"
 for path, filename in SUB_ROUTES.items():
     if path and filename:
         ROUTES[path] = filename if filename.startswith("/") else os.path.join(DATA_DIR, filename)
+        ROUTE_TYPES[path] = SUB_ROUTE_TYPES.get(path) or DEFAULT_TYPE
 # 兼容旧 kitconf / 单路径配置
 if not ROUTES:
     if not SUB_PATHS and _c("SUB_PATH", ""):
@@ -68,7 +72,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_error(404)
             return
         self.send_response(200)
-        self.send_header("Content-Type", "text/yaml; charset=utf-8")
+        self.send_header("Content-Type", ROUTE_TYPES.get(path) or DEFAULT_TYPE)
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(data)))

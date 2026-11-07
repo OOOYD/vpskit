@@ -283,7 +283,7 @@ def apply_node(
                 }
                 listing = remote.run("ls -1 /opt/sub/data 2>/dev/null || true", check=False, timeout=30)
                 for name in listing.splitlines():
-                    if name.startswith("sub-") and name.endswith(".yaml") and name not in expected:
+                    if name.startswith("sub-") and name.endswith((".yaml", ".txt")) and name not in expected:
                         remote.run("rm -f %s" % shlex.quote("/opt/sub/data/" + name), check=False, timeout=20)
                         warn("已移除过期订阅: %s" % name)
 
