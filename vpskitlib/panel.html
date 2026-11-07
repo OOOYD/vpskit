@@ -134,7 +134,8 @@
   .dlg .btn.primary[disabled]{opacity:.6}
   .subclient{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
   .subclient:first-child{border-top:0;padding-top:0}
-  .scname{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .scname{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;display:flex;gap:8px;align-items:baseline}
+  .schint{text-transform:none;letter-spacing:0;color:var(--dim);font-size:9.5px;opacity:.9}
   .subrow{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:8px;align-items:center}
   .subrow .sl{font-size:10px;color:var(--mut);white-space:nowrap}
   .subrow code{font:10px/1.5 ui-monospace,Menlo,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -509,10 +510,17 @@
 <div class="backdrop" id="subDlg" role="dialog" aria-modal="true" aria-label="订阅链接">
   <div class="dlg" style="width:560px">
     <h2>订阅链接</h2>
-    <div class="sub">Clash / Stash 与 v2ray 各一条；v2ray 那条里含 <b>IPv4 + IPv6</b> 两个节点。链接本身就是凭据，别外传。</div>
+    <div class="sub">
+      <b>两个 client 是同一个节点的两套凭据</b>：UUID 和订阅路径各自独立，轮换其中一个不影响另一个——
+      平时一台设备用一个（手机用 main、备用机/Airport 用 client2），要换设备只换对应那条。<br>
+      同一 client 下：<b>Clash / Stash</b> 是 YAML 订阅（Surge、Stash、ClashX 用）；
+      <b>v2ray / v2rayA</b> 是 base64 的 URI 列表，里面含 <b>IPv4 与 IPv6 两条</b>，给软路由/v2rayN 用。<br>
+      <b>订阅里只有节点，没有分流/去广告规则</b>：Clash 的规则在客户端规则集里，v2rayA 的规则在软路由自己配。
+    </div>
     <div id="subList"></div>
     <div class="dlgfoot">
-      <span class="l">轮换路径：<code>./vpskit rotate --sub &lt;节点&gt;</code></span>
+      <span class="l">轮换路径：<code>./vpskit rotate --sub &lt;节点&gt;</code><br>
+        链接即凭据：谁拿到都能连。面板只在本机/局域网，节点的 8888 端口对外开放，别发群里。</span>
       <span class="r"><button class="btn" id="subClose" type="button">关闭</button></span>
     </div>
   </div>
@@ -849,12 +857,16 @@ function openSubs() {
     box.innerHTML = '<div class="empty-hint">这个节点没有开启订阅（nodes.yaml 里 sub_enable）</div>';
   } else {
     const row = (label, url) => `<div class="subrow"><span class="sl">${label}</span><code title="${esc(url)}">${esc(url)}</code><button class="btn" data-copy="${esc(url)}" type="button">复制</button></div>`;
+    const flows = {};
+    ((n && n.node_clients) || []).forEach(c => { flows[c.email] = c.flow || ''; });
     box.innerHTML = emails.map(e => {
       const u = urls[e] || {};
       const rows = [];
       if (u.clash) rows.push(row('Clash / Stash', u.clash));
       if (u.v2ray) rows.push(row('v2ray / v2rayA', u.v2ray));
-      return `<div class="subclient"><div class="scname">${esc(e)}</div>${rows.join('')}</div>`;
+      const flow = flows[e] || '';
+      const hint = flow ? 'VLESS · ' + esc(flow.replace(/^xtls-rprx-/, '')) + '（需 Xray 内核）' : 'VLESS（通用内核）';
+      return `<div class="subclient"><div class="scname">${esc(e)} <span class="schint">${hint}</span></div>${rows.join('')}</div>`;
     }).join('');
     box.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
       try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '已复制'; setTimeout(() => b.textContent = '复制', 1200); }
