@@ -2,7 +2,7 @@
 
 把一台 Debian/Ubuntu VPS 变成可复用的节点：nftables 双栈防火墙、Xray REALITY、
 Shadowsocks(v6 备份)、订阅页、流量页、autoban、fail2ban、自愈、每日快照/备份、
-变更台账，以及一个多节点只读面板。
+变更台账，以及一个多节点面板（本地只读，可选只读分享）。
 
 设计目标只有四个字：**幂等、可验证**。
 
@@ -10,6 +10,8 @@ Shadowsocks(v6 备份)、订阅页、流量页、autoban、fail2ban、自愈、�
 - `apply` 才动手：先备份，再改文件；防火墙带“未确认自动恢复”的保险丝
 - 秘密只生成一次：`state/<node>/secrets.json`（0600），重复 apply 不会换 UUID/密钥
 - 每个节点独立配置：`nodes.yaml`；秘密不写在这个文件里
+
+![vpskit 面板](docs/images/panel-light.png)
 
 > 这是 v1.0 重写版。旧的 `install.sh` 只作为兼容入口保留；旧版文件请留在本地，
 > 不要提交。公开仓库只包含代码、文档和示例配置。
@@ -119,7 +121,7 @@ SSH 加固校验 → 防火墙（保险丝+回连验证）→ 启动服务 → �
 | `vpskit show <id> [--secrets]` | 秘密指纹；`--secrets` 才显示原文 |
 | `vpskit list` | 节点列表 |
 | `vpskit doctor` | 本机环境自检 |
-| `vpskit panel` | 多节点只读面板 |
+| `vpskit panel` | 多节点面板（本机只读，可添加节点） |
 
 `apply` 额外参数：
 
@@ -181,17 +183,22 @@ legacy/                旧版本地文件（gitignored）
 
 ## 面板
 
+![面板（暗黑主题）](docs/images/panel-dark.png)
+
 ```bash
 ./vpskit panel                  # 127.0.0.1:8787，自动开浏览器
 ./vpskit panel --no-browser     # 只启动
 ```
 
-- 只读：没有重启/封禁按钮，避免把面板变成高价值攻击面。
-- 默认只绑本机。要公网分享：
-  1. `nodes.yaml` 的 `panel.token` 设置一个随机串
+- **左栏**：节点身份（地址/到期/线路/优化/商家）、端口、fail2ban、客户端、最近事件（含告警原文）。
+- **主区**：12 列自由网格，卡片可以随意拖放（点「布局」→ 拖 → 「完成」，位置存在浏览器本地）；三套主题（纸感/冷白/暗黑）、按日·按月、折线·柱状。
+- **默认只读**：没有重启/封禁/执行命令的按钮。唯一的写路径是「添加节点」——只往 `nodes.yaml` 追加一节，先备份、写完用 `load_nodes` 校验、失败自动回滚，不 SSH 远端；不想开就用 `panel.allow_write: false` 关掉。
+- **默认只绑 127.0.0.1**。没配 `panel.token` 时只接受本机 Host，挡住“把 127.0.0.1 转发到公网的隧道”和 DNS rebinding；所有响应带 CSP（`default-src 'none'`）、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`。
+- 要公网分享：
+  1. `nodes.yaml` 的 `panel.token` 设一个随机串
   2. 用 Caddy/Nginx 加 HTTPS 反代到 `127.0.0.1:8787`
-  3. 给朋友用 `share_token`，分享视图会隐藏 host/IP/端口/fail2ban 细节
-- 面板在采集时通过 SSH 读取节点；不新增入站端口，不需要 agent。
+  3. 给朋友用 `share_token`：分享视图里 **IP 只保留前缀**（`203.0.*.*`），端口、客户端、变更记录一律不下发
+- 面板采集时通过 SSH 读取节点；不新增入站端口，不需要 agent。
 
 ---
 

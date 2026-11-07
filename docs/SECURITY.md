@@ -60,7 +60,16 @@
 
 ### 5. 面板
 
-- 只读：没有重启/封禁/执行命令的接口。
+- 默认只读：没有重启/封禁/执行命令的接口。
+- 唯一写接口 `POST /api/nodes`：只追加 `nodes.yaml`（先备份、写完 `load_nodes` 校验、失败回滚），
+  要求 `application/json`（浏览器会先发预检，等于 CSRF 防护）且 `Origin` 必须与 `Host` 一致；
+  每分钟最多 6 次写入；`panel.allow_write: false` 可整条关掉。
+- **Host 白名单**：没配 `token` 时只接受 `Host = 127.0.0.1 / localhost / [::1]`，
+  挡住两种真实风险——把 127.0.0.1 转发到公网的隧道，以及网页用 DNS rebinding 读本机面板。
+  真要走隧道/反代，先配 `panel.token`（配了 token 就由 token 把关）。
+- 响应头带 `Content-Security-Policy: default-src 'none'; connect-src 'self'`、`X-Frame-Options: DENY`、
+  `Referrer-Policy: no-referrer`，即使有 XSS 也发不出去数据。
+- 分享视图（`/share/<token>`）里 IP 只保留前缀（`203.0.*.*`），端口、客户端、变更记录一律不下发。
 - 默认本机；非本机必须 `panel.token`；分享用独立 `share_token`，分享视图去掉 host/IP/端口/fail2ban/变更。
 - 面板主机能 SSH 到节点，所以它本身是信任边界；不要把面板放在不可信机器上，公网必须 HTTPS + 强 token。
 - 面板的 XSS 防护：所有远端字段经 `esc()`/`html.escape`；JSON 注入 `<` 被转义为 `\u003c`。

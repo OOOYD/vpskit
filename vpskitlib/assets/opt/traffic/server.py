@@ -196,8 +196,11 @@ def render_page(data, changes, unattr=None):
 <style>
 :root{{--bg:#f5f5f7;--card:#fff;--card2:#e8e8ed;--text:#1d1d1f;--sub:#86868b;--line:#e8e8ed;--blue:#007aff}}
 *{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px 16px 40px}}
-.wrap{{width:100%;max-width:430px}}
+html,body{{max-width:100%;overflow-x:hidden}}
+body{{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px 14px 40px}}
+.wrap{{width:100%;max-width:430px;min-width:0}}
+.stat b{{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.big .num{{font-size:28px}}
 h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
 .sub{{color:var(--sub);font-size:11px;margin:0 4px 14px}}
 .card{{background:var(--card);border-radius:20px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.06)}}
@@ -208,7 +211,7 @@ h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
 .bar{{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;margin:10px 0 6px}}
 .fill{{height:100%;border-radius:6px}}
 .meta{{display:flex;justify-content:space-between;font-size:10px;color:var(--sub)}}
-.stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}}
+.stats{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}}
 .stat{{background:var(--card);border-radius:16px;padding:12px 6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}}
 .stat b{{display:block;font-size:16px;font-weight:700}}
 .stat span{{font-size:10px;color:var(--sub)}}
@@ -217,7 +220,7 @@ h1{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:6px 4px 2px}}
 .bar{{width:56%;max-width:22px;background:var(--card2);border-radius:7px 7px 3px 3px}}
 .bar.today{{background:linear-gradient(180deg,#64d2ff,var(--blue))}}
 .bv{{font-size:9px;color:var(--sub);margin-bottom:2px}}
-.bl{{font-size:9px;color:var(--sub);margin-top:4px;white-space:nowrap}}
+.bl{{font-size:9px;color:var(--sub);margin-top:4px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
 .alert{{font-size:11px;padding:8px 10px;border-radius:12px;margin-top:6px}}
 .urow{{display:flex;align-items:baseline;gap:8px;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line)}}
 .urow:last-child{{border-bottom:none}}

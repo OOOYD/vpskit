@@ -350,6 +350,8 @@ class PanelConfig:
     token: str = ""
     share_token: str = ""
     title: str = "vpskit"
+    allow_hosts: List[str] = field(default_factory=list)
+    allow_write: bool = True
 
 
 @dataclass
@@ -535,6 +537,8 @@ def load_nodes(path: Path) -> NodesConfig:
         token=str(panel_raw.get("token") or ""),
         share_token=str(panel_raw.get("share_token") or ""),
         title=str(panel_raw.get("title") or "vpskit"),
+        allow_hosts=[str(h).strip().lower() for h in (panel_raw.get("allow_hosts") or []) if str(h).strip()],
+        allow_write=_bool(panel_raw.get("allow_write"), True),
     )
     return NodesConfig(path=path, nodes=nodes, panel=panel, defaults=defaults)
 

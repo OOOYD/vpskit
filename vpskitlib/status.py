@@ -36,6 +36,16 @@ def collect_one(node: NodeConfig, root: Path, *, cache_seconds: int = 0, timeout
         data["purchased_on"] = node.purchased_on
         data["expires_on"] = node.expires_on
         data["billing_cycle"] = node.billing_cycle
+        # 面板侧栏用的配置项（来自 nodes.yaml，不是远端）
+        data["mail_to"] = node.mail_to
+        data["node_clients"] = [{"email": c.email, "flow": c.flow} for c in node.clients]
+        data["ports_cfg"] = {
+            "ssh": node.ssh_port,
+            "reality": node.reality_port,
+            "sub": node.sub_port if node.sub_enable else 0,
+            "traffic": node.traffic_web_port if node.traffic_web_enable else 0,
+            "ss": node.ss_port if node.ss_enable else 0,
+        }
         data["online"] = True
         data["error"] = ""
         try:
@@ -56,6 +66,20 @@ def collect_one(node: NodeConfig, root: Path, *, cache_seconds: int = 0, timeout
             "error": str(exc)[:400],
             "services": {},
             "traffic": None,
+            "provider": node.provider,
+            "line": node.line,
+            "purchased_on": node.purchased_on,
+            "expires_on": node.expires_on,
+            "billing_cycle": node.billing_cycle,
+            "mail_to": node.mail_to,
+            "node_clients": [{"email": c.email, "flow": c.flow} for c in node.clients],
+            "ports_cfg": {
+                "ssh": node.ssh_port,
+                "reality": node.reality_port,
+                "sub": node.sub_port if node.sub_enable else 0,
+                "traffic": node.traffic_web_port if node.traffic_web_enable else 0,
+                "ss": node.ss_port if node.ss_enable else 0,
+            },
         }
 
 

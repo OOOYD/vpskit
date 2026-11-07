@@ -147,7 +147,9 @@ ops log ── changelog.md + changelog.jsonl (0644)
 - 后台线程每 `refresh_seconds` 用 SSH 跑 `status.py`，缓存结果；
 - `/api/status` 需要 `panel.token`；
 - `/share/<share_token>` 返回脱敏视图（去掉 host/IP/端口/fail2ban/变更）；
-- 只读，没有操作按钮。
+- 只读，没有重启/封禁/执行命令的接口；**唯一写路径**是 `POST /api/nodes`（添加节点）：
+  只往 `nodes.yaml` 追加一节，先备份、写完立刻用 `load_nodes` 校验，失败回滚；不 SSH、不碰远端。
+  该接口要求 `Content-Type: application/json`（触发预检，挡 CSRF）并校验 `Origin` 与 Host 一致。
 
 面板不新增入站端口、不需要 agent；它和 CLI 共用 `status.py` 的数据结构。
 
@@ -165,4 +167,5 @@ ops log ── changelog.md + changelog.jsonl (0644)
   代价是会清掉 fail2ban 的 `f2b-table`，所以 apply 后重启 fail2ban，且 Docker 主机默认拒绝。
 - 订阅默认是极简 Clash 配置（GEOIP,CN + MATCH），不做大而全规则；需要完整规则用
   `sub_template` 或 Sub-Store。
-- 面板只读；操作继续走 CLI，保持“危险动作必须显式命令 + 确认”的原则。
+- 面板默认只读（除“添加节点”写本地配置）；部署/改配置继续走 CLI，
+  保持“危险动作必须显式命令 + 确认”的原则。

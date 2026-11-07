@@ -22,6 +22,8 @@
 | `token` | `""` | 管理视图 token；URL `?token=` |
 | `share_token` | `""` | 只读分享 token；`/share/<token>` |
 | `title` | `vpskit` | 面板标题 |
+| `allow_hosts` | `[]` | **没配 `token` 时**额外允许的 `Host`；默认只认 `127.0.0.1/localhost/[::1]`，挡隧道转发和 DNS rebinding |
+| `allow_write` | `true` | 设 `false` 后 `POST /api/nodes` 直接 403，面板纯只读 |
 
 ## 节点通用
 

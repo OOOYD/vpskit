@@ -140,6 +140,53 @@ def changes(limit=5):
     return result
 
 
+def backups():
+    root = "/root/.vpskit/backups"
+    try:
+        names = sorted(os.listdir(root))
+    except Exception:
+        return {"count": 0, "latest": "", "time": ""}
+    latest = names[-1] if names else ""
+    stamp = ""
+    if latest:
+        try:
+            stamp = time.strftime("%m-%d %H:%M", time.localtime(os.path.getmtime(os.path.join(root, latest))))
+        except Exception:
+            pass
+    return {"count": len(names), "latest": latest, "time": stamp}
+
+
+def net_speed():
+    """0.3 秒采样 /proc/net/dev，返回非 lo 网卡的上/下行字节速率。"""
+    def snap():
+        rx = tx = 0
+        with open("/proc/net/dev", "r") as handle:
+            for line in handle.readlines()[2:]:
+                if ":" not in line:
+                    continue
+                name, rest = line.split(":", 1)
+                if name.strip() == "lo":
+                    continue
+                parts = rest.split()
+                if len(parts) < 9:
+                    continue
+                rx += int(parts[0])
+                tx += int(parts[8])
+        return time.time(), rx, tx
+
+    try:
+        t1, r1, x1 = snap()
+        time.sleep(0.3)
+        t2, r2, x2 = snap()
+        dt = max(t2 - t1, 0.001)
+        return {
+            "rx_bps": round(max(r2 - r1, 0) / dt, 1),
+            "tx_bps": round(max(x2 - x1, 0) / dt, 1),
+        }
+    except Exception:
+        return {}
+
+
 def net_info():
     info = {"ipv4": [], "ipv6": [], "has_v4": False, "has_v6": False, "bbr": "", "qdisc": "", "tfo": "", "mtu_probing": "", "arch": platform.machine()}
     try:
@@ -228,13 +275,14 @@ def main():
         "fail2ban": fail2ban(),
         "traffic": summary,
         "unattr": unattr,
-        "changes": changes(5),
+        "changes": changes(8),
         "mem": meminfo(),
         "disk": dict(zip(["total", "used", "free"], shutil.disk_usage("/"))),
         "load": list(os.getloadavg()),
         "cpu": cpu_info(),
-        "network": net_info(),
+        "network": dict(net_info(), **net_speed()),
         "provisioned_on": provisioned_on(),
+        "backups": backups(),
         "xray": out(["/usr/local/bin/xray", "version"]).splitlines()[:2],
     }
     try:

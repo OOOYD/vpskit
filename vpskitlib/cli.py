@@ -355,10 +355,19 @@ def cmd_doctor(args) -> int:
 
 
 def cmd_panel(args) -> int:
+    import secrets as _secrets
+
     from .panel import run_panel
 
     nodes = _nodes(args)
-    run_panel(nodes, _root(args), listen=args.listen, port=args.port, no_browser=args.no_browser)
+    listen = args.listen
+    if getattr(args, "lan", False):
+        listen = listen or "0.0.0.0"
+        if not nodes.panel.token:
+            # 只对本次运行生效，不写回 nodes.yaml
+            nodes.panel.token = _secrets.token_urlsafe(18)
+            detail("已临时生成面板 token（本次运行有效；想固定请写到 nodes.yaml 的 panel.token）")
+    run_panel(nodes, _root(args), listen=listen, port=args.port, no_browser=args.no_browser)
     return 0
 
 
@@ -463,6 +472,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("panel", help="启动多节点只读面板")
     sp.add_argument("--listen", default="")
     sp.add_argument("--port", type=int, default=0)
+    sp.add_argument("--lan", action="store_true", help="监听 0.0.0.0，方便手机在同一 Wi-Fi 下打开（会自动要 token）")
     sp.add_argument("--no-browser", action="store_true")
     sp.set_defaults(func=cmd_panel)
 

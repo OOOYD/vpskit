@@ -13,7 +13,7 @@
 - 订阅页（每用户独立路径）+ 流量页 + 邮件告警
 - autoban（未认证大流量阶梯封禁）+ fail2ban
 - xray 内存自愈 + 每日快照/备份 + 变更台账
-- 多节点只读面板
+- 多节点面板（默认只读，可在面板里添加节点并写入 `nodes.yaml`）
 
 秘密只在本地 `state/<node>/secrets.json`；`nodes.yaml` 不含秘密。
 
@@ -206,7 +206,8 @@ ssh <host> /opt/traffic/unattr.py
 # 默认 http://127.0.0.1:8787
 ```
 
-- 只读，无操作按钮
+- 默认只读：没有重启/封禁/执行命令的按钮；唯一会写盘的是「添加节点」（追加 `nodes.yaml`，先备份后校验），
+  可用 `panel.allow_write: false` 关掉；没配 token 时只认本机 Host（防隧道转发/rebinding）
 - 默认只绑本机；公网要 `nodes.yaml` 里设 `panel.token`，并用 Caddy/Nginx 加 HTTPS
 - 给朋友分享用 `share_token`，分享视图会隐藏 host/IP/端口
 
@@ -259,7 +260,7 @@ nodes:
 - 本地私有文件（`nodes.yaml`、`state/`、`build/`、`private/`）都在 `.gitignore` 里；
   Git 只跟踪已加入版本库的文件，这些不会上传，也不会让云端和本地“自动变得不一样”
 - 旧历史如果曾推过，立即 `vpskit rotate <node> --all`
-- 面板只读；`apply/rollback/rotate` 必须人工确认
+- 面板默认只读；`apply/rollback/rotate` 必须人工确认（添加节点只写本地配置，不会部署）
 
 ## 12. 常见问题
 
